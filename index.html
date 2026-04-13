@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Facthem — European Parliament Fact-Checker</title>
+  <meta name="description" content="We verify what Members of the European Parliament say. Browse verified claims by session." />
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://facthem.eu/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://facthem.eu/" />
+  <meta property="og:title" content="Facthem — European Parliament Fact-Checker" />
+  <meta property="og:description" content="We verify what Members of the European Parliament say. Every claim, checked against sources." />
+  <meta property="og:image" content="https://facthem.eu/assets/portada.webp" />
+  <meta property="og:locale" content="en_GB" />
+  <meta property="og:site_name" content="Facthem EU" />
+
+  <!-- Twitter/X Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@facthem_eu" />
+  <meta name="twitter:title" content="Facthem — European Parliament Fact-Checker" />
+  <meta name="twitter:description" content="We verify what Members of the European Parliament say. Every claim, checked against sources." />
+  <meta name="twitter:image" content="https://facthem.eu/assets/portada.webp" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="/assets/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <link rel="manifest" href="/assets/site.webmanifest" />
+
+  <!-- Theme color -->
+  <meta name="theme-color" content="#080d14" />
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Facthem EU",
+    "url": "https://facthem.eu",
+    "description": "Fact-checker for Members of the European Parliament",
+    "inLanguage": "en",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Facthem EU",
+      "url": "https://facthem.eu",
+      "sameAs": ["https://twitter.com/facthem_eu"]
+    }
+  }
+  </script>
+
+  <!-- Supabase config — safe to expose (anon key, RLS enforced) -->
+  <script>
+    const SUPABASE_URL  = 'https://kivkdkddhjkrdafkgxmb.supabase.co';
+    const SUPABASE_ANON = 'sb_publishable_hZ4T6T0F_whJfF2jjBnYJw_JJnsEdBJ';
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://esm.sh" crossorigin />
+  <link rel="preload" as="image" href="/assets/portada.webp" fetchpriority="high" />
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Google Tag Manager — deferred to avoid render-blocking -->
+  <script>
+    window.addEventListener('load', function() {
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M6ZJVS39');
+    });
+  </script>
+</head>
+<body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M6ZJVS39" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+
+  <!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-content">
+      <p class="hero-tagline">european parliament fact-checker</p>
+      <h1 class="hero-title">Facthem</h1>
+      <p class="hero-subtitle">
+        We verify what Members of the European Parliament say.<br>
+        Every claim, checked against sources.
+        <br><b>Truth. No agenda.</b>
+      </p>
+      <div class="hero-actions">
+        <a class="hero-cta hero-cta--primary" href="#app-header" data-cta="sesiones">Browse sessions</a>
+        <a class="hero-cta hero-cta--secondary" href="#app-header" data-cta="busqueda">MEPs</a>
+        <a class="hero-cta hero-cta--secondary" href="#app-header" data-cta="estadisticas">Statistics</a>
+        <a class="hero-cta hero-cta--secondary" href="blog.html">Blog</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Sticky app header ──────────────────────────────────────────────────── -->
+  <header class="site-header" id="app-header">
+    <nav class="tabs">
+      <button class="tab-button active" data-tab="view-sesiones">Sessions</button>
+      <button class="tab-button" data-tab="view-busqueda">MEPs</button>
+      <button class="tab-button" data-tab="view-estadisticas">Statistics</button>
+    </nav>
+    <span id="header-stats" aria-live="polite"></span>
+  </header>
+
+  <!-- ── App Views ─────────────────────────────────────────────────────────── -->
+  <div class="view-container active" id="view-sesiones">
+    <main id="main">
+
+      <!-- Mobile filters toggle -->
+      <button id="btn-filters-toggle" type="button" aria-expanded="false" aria-controls="filters">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="12" y1="18" x2="20" y2="18"/></svg>
+        Filters
+        <span id="filters-badge" hidden></span>
+        <svg class="filters-toggle-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+
+      <!-- Unified filters bar: session selector + content filters -->
+      <div id="filters">
+        <div class="session-calendar-wrap" id="session-calendar-wrap"></div>
+
+        <span class="filter-sep"></span>
+
+        <div class="multisel" id="ms-resultado" data-placeholder="Verdict" aria-label="Filter by verdict"></div>
+        <div class="multisel" id="ms-tematico"  data-placeholder="Topic"   aria-label="Filter by topic"></div>
+        <div class="multisel" id="ms-politico"  data-placeholder="MEP"     aria-label="Filter by MEP"></div>
+
+        <span class="filter-sep"></span>
+
+        <div class="search-wrap">
+          <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="search" id="search-claim" placeholder="Search claims…" aria-label="Search claims" autocomplete="off" spellcheck="false">
+        </div>
+
+        <button id="btn-clear-filters" hidden type="button" aria-label="Clear all filters">Clear filters</button>
+      </div>
+
+      <!-- Active filter pills -->
+      <div id="filter-pills" hidden aria-live="polite"></div>
+
+      <!-- Claims -->
+      <div id="claims-area">
+        <div id="claims-count" aria-live="polite" hidden></div>
+        <div id="claims-container">
+          <div class="welcome">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+              <polyline points="8 11 10.5 13.5 14.5 9.5"/>
+            </svg>
+            <p>Select a session to view verified claims.</p>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="view-container search-view" id="view-busqueda">
+    <div class="search-view-content">
+      <div class="search-input-area">
+        <div class="politician-combobox" id="politician-combobox">
+          <div class="search-wrap search-wrap--lg">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              id="politician-search-input"
+              class="politician-search-input"
+              placeholder="Type an MEP's name…"
+              autocomplete="off"
+              spellcheck="false"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="politician-suggestions"
+              aria-haspopup="listbox"
+            />
+            <button class="search-clear-btn" id="search-clear-btn" aria-label="Clear search" hidden>✕</button>
+          </div>
+          <ul id="politician-suggestions" class="politician-suggestions" role="listbox" aria-label="Suggested MEPs" hidden></ul>
+        </div>
+      </div>
+      <div id="search-filters" hidden>
+        <div class="multisel" id="ms-search-resultado" data-placeholder="Verdict" aria-label="Filter by verdict"></div>
+        <div class="multisel" id="ms-search-tematico"  data-placeholder="Topic"   aria-label="Filter by topic"></div>
+        <span class="filter-sep"></span>
+        <div class="search-wrap">
+          <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="search" id="search-busqueda-claim" placeholder="Search claims…"
+                 aria-label="Search claims by this MEP" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div id="search-results-area" class="search-results-area">
+        <div class="search-welcome">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <p>Search for an MEP to see all their verified claims.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="view-container dashboard-view" id="view-estadisticas">
+    <div class="dashboard-content">
+      <h2 class="dashboard-title">Global Statistics</h2>
+      <div id="dashboard-loading" class="loading">Loading statistics…</div>
+      <div id="dashboard-grid" class="dashboard-grid hidden"></div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>
+      Verifications are generated through an automated AI process and may contain inaccuracies.
+      &nbsp;·&nbsp;
+      <a href="aviso.html" class="footer-link">Legal notice</a>
+      &nbsp;·&nbsp;
+      <a href="blog.html" class="footer-link">Blog</a>
+    </p>
+    <p>
+      Follow us on X: <a href="https://x.com/facthem_eu" class="footer-link" target="_blank" rel="noopener">@facthem_eu</a>
+      &nbsp;·&nbsp;
+      Contact: <a class="footer-email" href="#" aria-label="Contact address"></a>
+      &nbsp;·&nbsp;
+      ♥ Support us:
+      <a href="https://paypal.me/hcasero" class="donate-btn" target="_blank" rel="noopener">PayPal</a>
+      <a href="https://ko-fi.com/hugocasero" class="donate-btn" target="_blank" rel="noopener">Ko-fi</a>
+    </p>
+  </footer>
+
+  <!-- ── Claim detail modal ───────────────────────────────────────────────── -->
+  <div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-content">
+    <div id="modal-card">
+      <button id="modal-close" aria-label="Close">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+  <script>
+    window.addEventListener('error', function(e) {
+      if (e.filename && e.filename.includes('supabase')) {
+        var lbl = document.getElementById('session-cal-label');
+        if (lbl) lbl.textContent = 'Connection error — reload the page';
+      }
+    });
+  </script>
+  <script src="js/mist.js" defer></script>
+  <script>
+    (function () {
+      var u = 'contact', d = 'facthem' + '.' + 'eu';
+      var el = document.querySelector('.footer-email');
+      if (el) { el.href = 'mailto:' + u + '@' + d; el.textContent = u + '\u0040' + d; }
+    })();
+  </script>
+</body>
+</html>

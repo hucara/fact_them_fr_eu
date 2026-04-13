@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog — Facthem EU</title>
+  <meta name="description"
+    content="Updates and improvements to Facthem EU, the European Parliament fact-checker." />
+  <link rel="canonical" href="https://facthem.eu/blog.html" />
+  <meta property="og:image" content="https://facthem.eu/assets/portada.webp" />
+  <meta name="twitter:image" content="https://facthem.eu/assets/portada.webp" />
+  <link rel="icon" type="image/png" href="/assets/favicon-32x32.png" />
+  <meta name="theme-color" content="#080d14" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Google Tag Manager -->
+  <script>(function (w, d, s, l, i) { w[l] = w[l] || []; w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' }); var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f); })(window, document, 'script', 'dataLayer', 'GTM-M6ZJVS39');</script>
+  <style>
+    .blog-page {
+      flex: 1;
+      max-width: 760px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 4rem 1.75rem 5rem;
+    }
+
+    .blog-page h1 {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: -.03em;
+      background: linear-gradient(135deg, #ffe566 0%, #ffcc00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: .25rem;
+    }
+
+    .blog-page .blog-subtitle {
+      font-size: .85rem;
+      color: var(--c-text-muted);
+      margin-bottom: 3rem;
+    }
+
+    .blog-post {
+      margin-bottom: 3rem;
+    }
+
+    .blog-post time {
+      display: block;
+      font-size: .72rem;
+      color: var(--c-text-muted);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: .5rem;
+    }
+
+    .blog-post h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--c-text);
+      margin-bottom: .6rem;
+    }
+
+    .blog-post p {
+      font-size: .95rem;
+      line-height: 1.8;
+      color: var(--c-text);
+      margin-bottom: .75rem;
+    }
+
+    .blog-post ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 .75rem;
+    }
+
+    .blog-post ul li {
+      font-size: .95rem;
+      line-height: 1.8;
+      color: var(--c-text);
+      padding-left: 1.25rem;
+      position: relative;
+    }
+
+    .blog-post ul li::before {
+      content: '·';
+      position: absolute;
+      left: 0;
+      color: var(--c-accent);
+      font-weight: 700;
+    }
+
+    .blog-post a {
+      color: var(--c-accent);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255, 204, 0, .35);
+    }
+
+    .blog-post a:hover {
+      border-color: var(--c-accent);
+    }
+
+    .blog-divider {
+      height: 1px;
+      background: var(--c-border);
+      margin: 2.5rem 0;
+    }
+
+    .blog-empty {
+      font-size: .95rem;
+      color: var(--c-text-muted);
+      padding: 2rem 0;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M6ZJVS39" height="0" width="0"
+      style="display:none;visibility:hidden"></iframe></noscript>
+
+  <header class="site-header">
+    <nav class="tabs">
+      <a href="index.html" class="tab-button" style="text-decoration:none">&larr; Back</a>
+    </nav>
+  </header>
+
+  <div class="blog-page">
+    <h1>Blog</h1>
+    <p class="blog-subtitle">Updates and improvements to Facthem EU</p>
+
+    <div class="blog-divider"></div>
+
+    <p class="blog-empty">No posts yet.</p>
+
+    <!-- New posts go here -->
+
+  </div>
+
+  <footer class="site-footer">
+    <p>
+      <a href="aviso.html" class="footer-link">Legal notice</a>
+      &nbsp;·&nbsp;
+      <a href="blog.html" class="footer-link">Blog</a>
+      &nbsp;·&nbsp;
+      Contact: <a class="footer-email" href="#" aria-label="Contact address"></a>
+      &nbsp;·&nbsp;
+      ♥ Support us:
+      <a href="https://paypal.me/hcasero" class="donate-btn" target="_blank" rel="noopener">PayPal</a>
+      <a href="https://ko-fi.com/hugocasero" class="donate-btn" target="_blank" rel="noopener">Ko-fi</a>
+    </p>
+  </footer>
+
+  <script>
+    (function () {
+      var u = 'contact', d = 'facthem' + '.' + 'eu';
+      document.querySelectorAll('.footer-email[aria-label]').forEach(function (el) {
+        el.href = 'mailto:' + u + '@' + d;
+        el.textContent = u + '\u0040' + d;
+      });
+    })();
+  </script>
+</body>
+
+</html>
