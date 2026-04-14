@@ -143,7 +143,7 @@ def slugify(text, claim_id):
     s = re.sub(r"[^a-z0-9\s-]", "", s)
     words = s.split()[:8]
     slug = re.sub(r"-+", "-", "-".join(words)).strip("-")
-    return f"{claim_id}-{slug}" if slug else str(claim_id)
+    return f"{slug}-{claim_id}" if slug else str(claim_id)
 
 
 # ── HTML renderers (mirror app.js) ────────────────────────────────────────────

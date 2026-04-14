@@ -743,7 +743,7 @@ let pendingClaims = [];   // flat ordered list yet to render
 let pendingGroups = null; // for multi-session: [{dividerHtml, claims[]}]
 
 function bindClaimToggle(container) {
-  container.querySelectorAll('.claim-toggle:not([data-bound])').forEach(btn => {
+  container.querySelectorAll('.claim-toggle:not(a):not([data-bound])').forEach(btn => {
     btn.dataset.bound = '1';
     btn.addEventListener('click', () => openModal(claimsById[btn.dataset.id]));
   });
@@ -879,7 +879,7 @@ function claimCard(claim) {
       ${tags ? `<div class="claim-tags">${tags}</div>` : ''}
 
       <div class="claim-actions">
-        ${v ? `<button class="claim-toggle" data-id="${claim.id}">See more →</button>` : ''}
+        ${v ? `<a class="claim-toggle" href="${claimPageUrl(claim)}">See more →</a>` : ''}
         <div class="share-wrapper">
           <button class="share-btn" data-claim-id="${claim.id}" aria-label="Share claim">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -977,9 +977,24 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
+// ─── Slug / claim page URL ────────────────────────────────────────────────────
+function slugify(text, id) {
+  let s = String(text || '').trim().toLowerCase();
+  s = s.replace(/[áä]/g, 'a').replace(/[éë]/g, 'e').replace(/[íï]/g, 'i')
+       .replace(/[óö]/g, 'o').replace(/[úü]/g, 'u').replace(/ñ/g, 'n').replace(/ç/g, 'c');
+  s = s.replace(/[^a-z0-9\s-]/g, '');
+  const words = s.trim().split(/\s+/).slice(0, 8);
+  const slug = words.join('-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return slug ? `${slug}-${id}` : String(id);
+}
+
+function claimPageUrl(claim) {
+  return `/claim/${slugify(claim.texto_normalizado, claim.id)}/`;
+}
+
 // ─── Share ────────────────────────────────────────────────────────────────────
-function buildShareUrl(claimId) {
-  return `https://facthem.eu/?claim=${claimId}`;
+function buildShareUrl(claim) {
+  return `https://facthem.eu${claimPageUrl(claim)}`;
 }
 
 function formatNombre(str) {
@@ -1005,7 +1020,7 @@ function buildShareTextPlain(claim) {
 }
 
 function buildShareMenu(claim) {
-  const shareUrl = buildShareUrl(claim.id);
+  const shareUrl = buildShareUrl(claim);
   const shareText = buildShareTextPlain(claim);
   const fullText = shareText + '\n\n' + shareUrl;
   const encodedUrl = encodeURIComponent(shareUrl);
@@ -1091,7 +1106,7 @@ function updateOGTags(claim) {
   setMeta('name', 'description', desc);
   setMeta('property', 'og:title', title);
   setMeta('property', 'og:description', desc);
-  setMeta('property', 'og:url', `https://facthem.eu/?claim=${claim.id}`);
+  setMeta('property', 'og:url', `https://facthem.eu${claimPageUrl(claim)}`);
   setMeta('name', 'twitter:title', title);
   setMeta('name', 'twitter:description', desc);
 }
@@ -1292,7 +1307,7 @@ async function handleShareImage(btn, claim) {
   try {
     const blob = await generateShareImage(claim);
     const file = new File([blob], 'facthem-claim.png', { type: 'image/png' });
-    const shareUrl = buildShareUrl(claim.id);
+    const shareUrl = buildShareUrl(claim);
     const shareText = buildShareText(claim);
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({ files: [file], text: shareText, url: shareUrl });
@@ -1903,7 +1918,7 @@ function renderSearchResults(claims, politicianName) {
   area.innerHTML = countBadge + groupsHtml;
 
   const byId = Object.fromEntries(claims.map(c => [c.id, c]));
-  area.querySelectorAll('.claim-toggle').forEach(btn => {
+  area.querySelectorAll('.claim-toggle:not(a)').forEach(btn => {
     btn.addEventListener('click', () => openModal(byId[btn.dataset.id]));
   });
 }

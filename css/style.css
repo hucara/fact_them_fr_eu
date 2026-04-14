@@ -894,6 +894,7 @@ body {
   font-family: inherit;
   color: var(--c-text-muted);
   cursor: pointer;
+  text-decoration: none;
   transition: border-color .12s, color .12s;
   align-self: flex-start;
 }
