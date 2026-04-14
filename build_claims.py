@@ -521,7 +521,7 @@ def render_page(claim, slug, session_date):
   <div id="modal-card" data-resultado="{resultado_class}">
 
     <!-- Back button where ✕ used to be -->
-    <a class="cp-back" href="{back_url}">
+    <a class="cp-back" href="{back_url}" id="cp-back-btn">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="15 18 9 12 15 6"/>
@@ -578,12 +578,28 @@ def render_page(claim, slug, session_date):
   <p class="cp-brand">facthem.eu</p>
 
   <script>
+    // Copy link
     document.getElementById('cp-copy').addEventListener('click', function () {{
       navigator.clipboard.writeText(this.dataset.url).then(() => {{
         this.querySelector('span').textContent = 'Copied!';
         setTimeout(() => {{ this.querySelector('span').textContent = 'Copy link'; }}, 2000);
       }});
     }});
+
+    // Back button: use history.back() when coming from the same site
+    // (restores tab + session + scroll). Falls through to the ?session= href
+    // when arriving from a share link or external source.
+    (function () {{
+      try {{
+        var ref = document.referrer;
+        if (ref && new URL(ref).origin === location.origin) {{
+          document.getElementById('cp-back-btn').addEventListener('click', function (e) {{
+            e.preventDefault();
+            history.back();
+          }});
+        }}
+      }} catch (e) {{}}
+    }})();
   </script>
 
 </body>
