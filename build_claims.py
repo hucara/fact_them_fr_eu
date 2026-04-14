@@ -439,7 +439,7 @@ def render_page(claim, slug, session_date):
       animation: none;
     }}
     #modal-content {{
-      padding-top: 0;
+      padding-top: 2.5rem;
     }}
 
     /* ── Back button — sits where ✕ was ── */
