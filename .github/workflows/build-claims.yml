@@ -1,20 +1,27 @@
-name: Build static claim pages
+name: Deploy site
 
-# Triggered manually from the Actions tab.
-# After adding new claims to Supabase, run this workflow to regenerate
-# the /claim/* static pages and update sitemap.xml.
+# Runs on every push to main (keeps CSS/JS/HTML changes live)
+# and can be triggered manually to rebuild claim pages from Supabase.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write   # needed to commit & push generated files
+  pages:    write
+  id-token: write   # required by actions/deploy-pages
+  contents: read
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -32,12 +39,11 @@ jobs:
           SUPABASE_ANON: ${{ secrets.SUPABASE_ANON }}
         run: python build_claims.py
 
-      - name: Commit and push
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add claim/ sitemap.xml
-          # only commit if something actually changed
-          git diff --cached --quiet || \
-            git commit -m "build: regenerate static claim pages [skip ci]"
-          git push
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .   # deploy the whole repo dir (claim/ now included after generation)
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
