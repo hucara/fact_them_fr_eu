@@ -15,6 +15,7 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 from datetime import date
 from pathlib import Path
 
@@ -301,6 +302,15 @@ def render_page(claim, slug, session_date):
     canon_url = f"{BASE_URL}/claim/{slug}.html"
     schema_ld = build_claim_review_schema(claim, slug, pol_nombre, session_date)
 
+    # ── Share URLs ──
+    share_text  = f'"{desc_text[:180]}{"…" if len(desc_text) > 180 else ""}" — {resultado_label} | Facthem EU'
+    enc_url     = urllib.parse.quote(canon_url)
+    enc_text    = urllib.parse.quote(share_text)
+    enc_wa      = urllib.parse.quote(f"{share_text}\n{canon_url}")
+    url_twitter = f"https://twitter.com/intent/tweet?text={enc_text}&url={enc_url}&via=facthem_eu"
+    url_wa      = f"https://wa.me/?text={enc_wa}"
+    url_tg      = f"https://t.me/share/url?url={enc_url}&text={enc_text}"
+
     # ── Politician line ──
     if pol_nombre:
         if is_eu_com:
@@ -415,49 +425,15 @@ def render_page(claim, slug, session_date):
   <link rel="stylesheet" href="../css/style.css" />
 
   <style>
-    /* ── Claim page layout ── */
     body {{
       display: flex;
       flex-direction: column;
+      align-items: center;
       min-height: 100vh;
-    }}
-    .cp-nav {{
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: .875rem 1.5rem;
-      border-bottom: 1px solid var(--c-border);
-      background: var(--c-surface);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }}
-    .cp-back {{
-      color: var(--c-text-muted);
-      text-decoration: none;
-      font-size: .82rem;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
-      transition: color .12s;
-    }}
-    .cp-back:hover {{ color: var(--c-text); }}
-    .cp-logo {{
-      margin-left: auto;
-      font-weight: 800;
-      font-size: .9rem;
-      color: var(--c-accent);
-      text-decoration: none;
-      letter-spacing: -.01em;
-    }}
-    .cp-main {{
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       padding: 2.5rem 1.25rem 4rem;
     }}
-    /* Strip modal-specific overrides so the card renders as a normal block */
+
+    /* ── Card: same as #modal-card but standalone ── */
     #modal-card {{
       max-height: none;
       animation: none;
@@ -465,70 +441,145 @@ def render_page(claim, slug, session_date):
     #modal-content {{
       padding-top: 0;
     }}
-    .cp-view-live {{
-      margin-top: 1.25rem;
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      color: var(--c-text-muted);
-      text-decoration: none;
-      font-size: .8rem;
-      font-weight: 500;
+
+    /* ── Back button — sits where ✕ was ── */
+    .cp-back {{
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255,255,255,.06);
       border: 1px solid var(--c-border);
       border-radius: var(--radius-xs);
-      padding: .4rem .9rem;
-      transition: border-color .12s, color .12s;
+      color: var(--c-text-muted);
+      font-size: .78rem;
+      font-weight: 600;
+      font-family: inherit;
+      padding: .35rem .65rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background .12s, color .12s;
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
     }}
-    .cp-view-live:hover {{ border-color: var(--c-accent); color: var(--c-accent); }}
+    .cp-back:hover {{
+      background: rgba(255,255,255,.12);
+      color: var(--c-text);
+    }}
+
+    /* ── Share row — replaces the JS share menu ── */
+    .cp-share-row {{
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--c-border);
+    }}
+    .cp-share-btn {{
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .35rem .7rem;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-xs);
+      font-size: .72rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--c-text-muted);
+      text-decoration: none;
+      background: none;
+      cursor: pointer;
+      transition: border-color .12s, color .12s;
+      white-space: nowrap;
+    }}
+    .cp-share-btn:hover {{
+      border-color: var(--c-accent);
+      color: var(--c-accent);
+    }}
+
+    /* ── Subtle brand footer ── */
+    .cp-brand {{
+      margin-top: 1.5rem;
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--c-text-muted);
+      opacity: .35;
+    }}
   </style>
 </head>
 <body>
 
-  <nav class="cp-nav">
+  <div id="modal-card" data-resultado="{resultado_class}">
+
+    <!-- Back button where ✕ used to be -->
     <a class="cp-back" href="{BASE_URL}/">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="15 18 9 12 15 6"/>
       </svg>
       Back
     </a>
-    <a class="cp-logo" href="{BASE_URL}/">Facthem.eu</a>
-  </nav>
 
-  <main class="cp-main">
-    <div id="modal-card" data-resultado="{resultado_class}">
-      <div id="modal-content">
+    <div id="modal-content">
 
-        <header class="claim-header" style="margin-bottom:1.25rem">
-          <div class="claim-meta-top">
-            {pol_html}
-          </div>
-          <span class="resultado-badge resultado-{resultado_class}">{esc(resultado_label)}</span>
-        </header>
+      <header class="claim-header" style="margin-bottom:1.25rem">
+        <div class="claim-meta-top">
+          {pol_html}
+        </div>
+        <span class="resultado-badge resultado-{resultado_class}">{esc(resultado_label)}</span>
+      </header>
 
-        <blockquote class="claim-text modal-claim-text" title="{esc(texto_orig)}">
-          {esc(texto_norm)}
-        </blockquote>
+      <blockquote class="claim-text modal-claim-text" title="{esc(texto_orig)}">
+        {esc(texto_norm)}
+      </blockquote>
 
-        {confidence_html}
+      {confidence_html}
 
-        {tags_html}
+      {tags_html}
 
-        {details_html}
+      {details_html}
 
+      <!-- Share row -->
+      <div class="cp-share-row">
+        <a class="cp-share-btn" href="{url_twitter}" target="_blank" rel="noopener">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          X / Twitter
+        </a>
+        <a class="cp-share-btn" href="{url_wa}" target="_blank" rel="noopener">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.127.557 4.123 1.532 5.856L0 24l6.335-1.652A11.954 11.954 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+          WhatsApp
+        </a>
+        <a class="cp-share-btn" href="{url_tg}" target="_blank" rel="noopener">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+          Telegram
+        </a>
+        <button class="cp-share-btn" id="cp-copy" data-url="{esc(canon_url)}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <span>Copy link</span>
+        </button>
       </div>
-    </div>
 
-    <a class="cp-view-live" href="{BASE_URL}/?claim={claim_id}">
-      View on Facthem
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-        <polyline points="15 3 21 3 21 9"/>
-        <line x1="10" y1="14" x2="21" y2="3"/>
-      </svg>
-    </a>
-  </main>
+    </div>
+  </div>
+
+  <p class="cp-brand">facthem.eu</p>
+
+  <script>
+    document.getElementById('cp-copy').addEventListener('click', function () {{
+      navigator.clipboard.writeText(this.dataset.url).then(() => {{
+        this.querySelector('span').textContent = 'Copied!';
+        setTimeout(() => {{ this.querySelector('span').textContent = 'Copy link'; }}, 2000);
+      }});
+    }});
+  </script>
 
 </body>
 </html>

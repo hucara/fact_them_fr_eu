@@ -988,13 +988,16 @@ function slugify(text, id) {
   return slug ? `${slug}-${id}` : String(id);
 }
 
+const SITE_ORIGIN = 'https://hucara.github.io';
+const SITE_BASE   = '/fact_them_fr_eu';
+
 function claimPageUrl(claim) {
-  return `/claim/${slugify(claim.texto_normalizado, claim.id)}.html`;
+  return `${SITE_BASE}/claim/${slugify(claim.texto_normalizado, claim.id)}.html`;
 }
 
 // ─── Share ────────────────────────────────────────────────────────────────────
 function buildShareUrl(claim) {
-  return `https://facthem.eu${claimPageUrl(claim)}`;
+  return `${SITE_ORIGIN}${claimPageUrl(claim)}`;
 }
 
 function formatNombre(str) {
@@ -1106,7 +1109,7 @@ function updateOGTags(claim) {
   setMeta('name', 'description', desc);
   setMeta('property', 'og:title', title);
   setMeta('property', 'og:description', desc);
-  setMeta('property', 'og:url', `https://facthem.eu${claimPageUrl(claim)}`);
+  setMeta('property', 'og:url', `${SITE_ORIGIN}${claimPageUrl(claim)}`);
   setMeta('name', 'twitter:title', title);
   setMeta('name', 'twitter:description', desc);
 }
