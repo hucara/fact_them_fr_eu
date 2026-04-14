@@ -303,6 +303,10 @@ def render_page(claim, slug, session_date):
     canon_url = f"{BASE_URL}/claim/{slug}.html"
     schema_ld = build_claim_review_schema(claim, slug, pol_nombre, session_date)
 
+    # ── Back URL ──
+    session_id = claim.get("session_id", "")
+    back_url   = f"{BASE_URL}/?session={session_id}" if session_id else f"{BASE_URL}/"
+
     # ── Share URLs ──
     share_text  = f'"{desc_text[:180]}{"…" if len(desc_text) > 180 else ""}" — {resultado_label} | Facthem EU'
     enc_url     = urllib.parse.quote(canon_url)
@@ -517,7 +521,7 @@ def render_page(claim, slug, session_date):
   <div id="modal-card" data-resultado="{resultado_class}">
 
     <!-- Back button where ✕ used to be -->
-    <a class="cp-back" href="{BASE_URL}/">
+    <a class="cp-back" href="{back_url}">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <polyline points="15 18 9 12 15 6"/>

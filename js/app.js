@@ -576,9 +576,13 @@ async function loadSessions() {
   }
 
   sessionCalendar.setSessions(sessions);
-  // Visually select the latest session, then load it
-  sessionCalendar.selectSession(sessions[0].id, /* silent */ true);
-  loadSession([sessions[0].id]);
+  // Honour ?session= deep-link from claim pages, otherwise default to latest
+  const sessionParam = new URLSearchParams(window.location.search).get('session');
+  const defaultId = (sessionParam && sessions.find(s => s.id === sessionParam))
+    ? sessionParam
+    : sessions[0].id;
+  sessionCalendar.selectSession(defaultId, /* silent */ true);
+  loadSession([defaultId]);
 }
 
 // ─── Claims for a session ─────────────────────────────────────────────────────
