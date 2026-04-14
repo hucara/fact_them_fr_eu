@@ -87,6 +87,17 @@ CLAIM_REVIEW_RATINGS = {
     "UNDERESTIMATED":        (2, "Underestimated"),
 }
 
+RESULTADO_EMOJIS = {
+    "CONFIRMED":             "✅",
+    "CONFIRMED_WITH_NUANCE": "⚠️",
+    "FALSE":                 "❌",
+    "DECONTEXTUALIZED":      "🟠",
+    "INACCURATE":            "🔸",
+    "UNVERIFIABLE":          "❓",
+    "OVERESTIMATED":         "🟠",
+    "UNDERESTIMATED":        "🟠",
+}
+
 FUENTE_TIPO_ORDER = {
     "Primary": 0, "Academic": 1, "Secondary": 2, "Tertiary": 3,
     "Primaria": 0, "Académica": 1, "Secundaria": 2, "Terciaria": 3,
@@ -307,8 +318,18 @@ def render_page(claim, slug, session_date):
     session_id = claim.get("session_id", "")
     back_url   = f"{BASE_URL}/?session={session_id}" if session_id else f"{BASE_URL}/"
 
+    # ── Share text (mirrors buildShareText in app.js) ──
+    resultado_key  = (v.get("resultado") or "").upper()
+    verdict_emoji  = RESULTADO_EMOJIS.get(resultado_key, "🔍")
+    nombre_share   = pol_nombre or "An MEP"
+    partido_share  = f" ({pol_grupo})" if pol_grupo else ""
+    texto_share    = desc_text[:200] + ("…" if len(desc_text) > 200 else "")
+    share_text     = (
+        f'🔍 {nombre_share}{partido_share} stated: "{texto_share}"\n'
+        f'{verdict_emoji} {resultado_label} | facthem.eu'
+    )
+
     # ── Share URLs ──
-    share_text  = f'"{desc_text[:180]}{"…" if len(desc_text) > 180 else ""}" — {resultado_label} | Facthem EU'
     enc_url     = urllib.parse.quote(canon_url)
     enc_text    = urllib.parse.quote(share_text)
     enc_wa      = urllib.parse.quote(f"{share_text}\n{canon_url}")
