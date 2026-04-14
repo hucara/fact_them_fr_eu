@@ -135,7 +135,8 @@ def format_resultado(resultado):
 
 
 def slugify(text, claim_id):
-    """First 8 words of text, URL-safe, prefixed with claim ID."""
+    """First 8 words of text, URL-safe, suffixed with the first segment of the claim UUID."""
+    short_id = str(claim_id).split("-")[0]
     s = str(text or "").strip().lower()
     # basic accent normalisation
     for src, dst in [("á","a"),("é","e"),("í","i"),("ó","o"),("ú","u"),
@@ -144,7 +145,7 @@ def slugify(text, claim_id):
     s = re.sub(r"[^a-z0-9\s-]", "", s)
     words = s.split()[:8]
     slug = re.sub(r"-+", "-", "-".join(words)).strip("-")
-    return f"{slug}-{claim_id}" if slug else str(claim_id)
+    return f"{slug}-{short_id}" if slug else short_id
 
 
 # ── HTML renderers (mirror app.js) ────────────────────────────────────────────

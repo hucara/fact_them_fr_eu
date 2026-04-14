@@ -979,13 +979,14 @@ function closeModal() {
 
 // ─── Slug / claim page URL ────────────────────────────────────────────────────
 function slugify(text, id) {
+  const shortId = String(id).split('-')[0];
   let s = String(text || '').trim().toLowerCase();
   s = s.replace(/[áä]/g, 'a').replace(/[éë]/g, 'e').replace(/[íï]/g, 'i')
        .replace(/[óö]/g, 'o').replace(/[úü]/g, 'u').replace(/ñ/g, 'n').replace(/ç/g, 'c');
   s = s.replace(/[^a-z0-9\s-]/g, '');
   const words = s.trim().split(/\s+/).slice(0, 8);
   const slug = words.join('-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-  return slug ? `${slug}-${id}` : String(id);
+  return slug ? `${slug}-${shortId}` : shortId;
 }
 
 const SITE_ORIGIN = 'https://hucara.github.io';
