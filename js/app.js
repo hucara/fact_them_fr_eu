@@ -2,42 +2,45 @@ import { supabase } from './supabase-client.js';
 
 // ─── Label maps ───────────────────────────────────────────────────────────────
 const TEMATICO_LABELS = {
-  defensa: 'Defence',
-  'economía': 'Economy',
-  educacion: 'Education',
-  igualdad: 'Equality',
-  industria_y_trabajo: 'Industry & Employment',
-  'inmigración': 'Immigration',
-  interior: 'Internal Affairs',
-  justicia_y_corrupcion: 'Justice & Anti-Corruption',
-  medio_ambiente: 'Environment',
-  otros: 'Other',
-  politica_social: 'Social Policy',
-  relaciones_internacionales: 'Foreign Affairs',
-  sanidad: 'Health',
-  vivienda: 'Housing',
+  agriculture: 'Agriculture',
+  defence: 'Defence',
+  economy: 'Economy',
+  energy: 'Energy',
+  environment: 'Environment',
+  equality: 'Equality',
+  health: 'Health',
+  housing: 'Housing',
+  human_rights: 'Human Rights',
+  industry_and_labour: 'Industry & Employment',
+  internal_affairs: 'Internal Affairs',
+  international_relations: 'Foreign Affairs',
+  justice_and_corruption: 'Justice & Anti-Corruption',
+  migration: 'Migration',
+  other: 'Other',
+  social_policy: 'Social Policy',
+  transport: 'Transport',
 };
 
 const RESULTADO_LABELS = {
-  CONFIRMADO: 'Confirmed',
-  CONFIRMADO_CON_MATIZ: 'Nuanced',
-  DESCONTEXTUALIZADO: 'Out of context',
-  FALSO: 'False',
-  IMPRECISO: 'Inaccurate',
-  NO_VERIFICABLE: 'Unverifiable',
-  SOBREESTIMADO: 'Overestimated',
-  SUBESTIMADO: 'Underestimated',
+  CONFIRMED: 'Confirmed',
+  CONFIRMED_WITH_NUANCE: 'Nuanced',
+  DECONTEXTUALIZED: 'Out of context',
+  FALSE: 'False',
+  INACCURATE: 'Inaccurate',
+  UNVERIFIABLE: 'Unverifiable',
+  OVERESTIMATED: 'Overestimated',
+  UNDERESTIMATED: 'Underestimated',
 };
 
 const RESULTADO_EMOJIS = {
-  CONFIRMADO: '✅',
-  CONFIRMADO_CON_MATIZ: '⚠️',
-  FALSO: '❌',
-  DESCONTEXTUALIZADO: '🟠',
-  IMPRECISO: '🔸',
-  NO_VERIFICABLE: '❓',
-  SOBREESTIMADO: '🟠',
-  SUBESTIMADO: '🟠',
+  CONFIRMED: '✅',
+  CONFIRMED_WITH_NUANCE: '⚠️',
+  FALSE: '❌',
+  DECONTEXTUALIZED: '🟠',
+  INACCURATE: '🔸',
+  UNVERIFIABLE: '❓',
+  OVERESTIMATED: '🟠',
+  UNDERESTIMATED: '🟠',
 };
 
 // Exact CSS colors for generated images (keyed by resultadoToClass output)
@@ -675,8 +678,8 @@ function updateClaimsCount(shown, total) {
   if (!total) { statsEl.innerHTML = headerStatsBase; return; }
 
   const pleno = shown === total
-    ? `<strong>${total.toLocaleString('es-ES')}</strong> en este pleno`
-    : `<strong>${shown.toLocaleString('es-ES')}</strong>/<strong>${total.toLocaleString('es-ES')}</strong> en este pleno`;
+    ? `<strong>${total.toLocaleString('es-ES')}</strong> in this session`
+    : `<strong>${shown.toLocaleString('es-ES')}</strong>/<strong>${total.toLocaleString('es-ES')}</strong> in this session`;
 
   statsEl.innerHTML = `${headerStatsBase} · ${pleno}`;
 }
@@ -855,7 +858,7 @@ function claimCard(claim) {
       <header class="claim-header">
         <div class="claim-meta-top">
           ${pol
-      ? `<span class="politician-name">${escHtml(formatNombre(pol.nombre_completo))}${pol.partido ? `<span class="politician-partido">· ${escHtml(pol.partido)}</span>` : ''}</span>`
+      ? `<span class="politician-name">${escHtml(formatNombre(pol.nombre_completo))}${pol.grupo_parlamentario ? `<span class="politician-partido">· ${escHtml(pol.grupo_parlamentario)}</span>` : ''}</span>`
       : '<span class="politician-name unknown">Unknown MEP</span>'}
         </div>
         <span class="resultado-badge resultado-${resultadoClass}">${resultadoLabel}</span>
@@ -876,7 +879,7 @@ function claimCard(claim) {
       ${tags ? `<div class="claim-tags">${tags}</div>` : ''}
 
       <div class="claim-actions">
-        ${v ? `<button class="claim-toggle" data-id="${claim.id}">Ver más →</button>` : ''}
+        ${v ? `<button class="claim-toggle" data-id="${claim.id}">See more →</button>` : ''}
         <div class="share-wrapper">
           <button class="share-btn" data-claim-id="${claim.id}" aria-label="Share claim">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -927,7 +930,7 @@ function openModal(claim) {
     <header class="claim-header" style="margin-bottom:1.25rem">
       <div class="claim-meta-top">
         ${pol
-      ? `<span class="politician-name" style="font-size:1.05rem">${escHtml(formatNombre(pol.nombre_completo))}${pol.grupo_parlamentario === 'EU Commission' ? `<span class="politician-gobierno" title="EU Commission">🏛️</span>` : ''}${pol.partido ? `<span class="politician-partido">· ${escHtml(pol.partido)}</span>` : ''}</span>`
+      ? `<span class="politician-name" style="font-size:1.05rem">${escHtml(formatNombre(pol.nombre_completo))}${pol.grupo_parlamentario === 'EU Commission' ? `<span class="politician-gobierno" title="EU Commission">🏛️</span>` : ''}${pol.grupo_parlamentario && pol.grupo_parlamentario !== 'EU Commission' ? `<span class="politician-partido">· ${escHtml(pol.grupo_parlamentario)}</span>` : ''}</span>`
       : '<span class="politician-name unknown">Unknown MEP</span>'}
       </div>
       <span class="resultado-badge resultado-${resultadoClass}">${resultadoLabel}</span>
@@ -938,7 +941,7 @@ function openModal(claim) {
     </blockquote>
 
     ${score !== null ? `
-      <div class="confidence-bar" style="margin-bottom:1rem" title="Confianza del modelo: ${score}%">
+      <div class="confidence-bar" style="margin-bottom:1rem" title="Model confidence: ${score}%">
         <div class="confidence-track" style="width:160px">
           <div class="confidence-fill confidence-${resultadoClass}" style="width:${score}%"></div>
         </div>
@@ -956,7 +959,7 @@ function openModal(claim) {
             <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
             <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
           </svg>
-          Compartir
+          Share
         </button>
         <div class="share-menu" hidden>${buildShareMenu(claim)}</div>
       </div>
@@ -991,7 +994,7 @@ function buildShareText(claim) {
   const resultadoLabel = v ? formatResultado(v.resultado) : 'Unverified';
   const emoji = resultadoKey ? (RESULTADO_EMOJIS[resultadoKey] ?? '🔍') : '🔍';
   const nombre = pol ? formatNombre(pol.nombre_completo) : 'An MEP';
-  const partido = pol?.partido ? ` (${pol.partido})` : '';
+  const partido = pol?.grupo_parlamentario ? ` (${pol.grupo_parlamentario})` : '';
   const texto = String(claim.texto_normalizado ?? '').trim();
   const truncated = texto.length > 200 ? texto.slice(0, 200) + '…' : texto;
   return `🔍 ${nombre}${partido} stated: "${truncated}"\n${emoji} ${resultadoLabel} | facthem.eu`;
@@ -1147,7 +1150,7 @@ async function generateShareImage(claim) {
   const c = IMG_COLORS[clsKey] ?? IMG_COLORS.nv;
   const resultadoLabel = v ? formatResultado(v.resultado) : 'Unverified';
   const nombre = pol ? formatNombre(pol.nombre_completo) : 'An MEP';
-  const partido = pol?.partido ?? '';
+  const partido = pol?.grupo_parlamentario ?? '';
   const texto = capitalize(String(claim.texto_normalizado ?? '').trim());
   const score = v?.confidence_score != null ? Math.round(v.confidence_score * 100) : null;
   const font = "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif";
@@ -1304,7 +1307,7 @@ async function handleShareImage(btn, claim) {
   } catch (err) {
     if (err?.name !== 'AbortError') console.error('Share image failed:', err);
   } finally {
-    if (span) span.textContent = originalText || 'Compartir imagen';
+    if (span) span.textContent = originalText || 'Share image';
   }
 }
 
@@ -1388,6 +1391,7 @@ function renderOmisiones(raw) {
 }
 
 const FUENTE_TIPO_ORDER = { 'Primary': 0, 'Academic': 1, 'Secondary': 2, 'Tertiary': 3, 'Primaria': 0, 'Académica': 1, 'Secundaria': 2, 'Terciaria': 3 };
+const FUENTE_TIPO_LABELS = { 'Primaria': 'Primary', 'Académica': 'Academic', 'Secundaria': 'Secondary', 'Terciaria': 'Tertiary' };
 
 function renderFuentes(raw) {
   if (!isValidValue(raw)) return '';
@@ -1407,14 +1411,15 @@ function renderFuentes(raw) {
   );
 
   const bullets = sorted.map(s => {
-    const isPrimary = s.tipo === 'Primaria';
-    const tipoKey = (s.tipo ?? '').toLowerCase().replace(/[^a-z]/g, '') || 'otra';
+    const isPrimary = s.tipo === 'Primaria' || s.tipo === 'Primary';
+    const tipoLabel = FUENTE_TIPO_LABELS[s.tipo] ?? s.tipo ?? '';
+    const tipoKey = tipoLabel.toLowerCase().replace(/[^a-z]/g, '') || 'other';
     const name = escHtml(s.nombre ?? 'Source');
     const link = s.url
       ? `<a class="source-link" href="${escHtml(s.url)}" target="_blank" rel="noopener">${name}</a>`
       : `<span>${name}</span>`;
-    const tipoBadge = s.tipo
-      ? `<span class="source-tipo source-tipo--${tipoKey}">${escHtml(s.tipo)}</span>`
+    const tipoBadge = tipoLabel
+      ? `<span class="source-tipo source-tipo--${tipoKey}">${escHtml(tipoLabel)}</span>`
       : '';
     const dato = s.dato_especifico
       ? `<span class="source-dato">${escHtml(s.dato_especifico)}</span>`
@@ -1431,14 +1436,14 @@ function renderFuentes(raw) {
 function resultadoToClass(resultado) {
   if (!resultado) return 'nv';
   const map = {
-    'CONFIRMADO': 'verdadero',
-    'CONFIRMADO_CON_MATIZ': 'parcial',
-    'DESCONTEXTUALIZADO': 'enganoso',
-    'IMPRECISO': 'nv',
-    'FALSO': 'falso',
-    'NO_VERIFICABLE': 'nv',
-    'SOBREESTIMADO': 'enganoso',
-    'SUBESTIMADO': 'enganoso',
+    'CONFIRMED': 'verdadero',
+    'CONFIRMED_WITH_NUANCE': 'parcial',
+    'DECONTEXTUALIZED': 'enganoso',
+    'INACCURATE': 'nv',
+    'FALSE': 'falso',
+    'UNVERIFIABLE': 'nv',
+    'OVERESTIMATED': 'enganoso',
+    'UNDERESTIMATED': 'enganoso',
   };
   return map[resultado.toUpperCase()] ?? 'nv';
 }
@@ -1492,13 +1497,13 @@ function renderDashboard(s) {
   const d = (field) => s[field] || {};
   const polLabel = (f) => {
     const o = d(f);
-    return o.name ? `${formatNombre(o.name)}${o.partido ? ` · ${o.partido}` : ''}` : '-';
+    return o.name ? `${formatNombre(o.name)}${o.grupo_parlamentario ? ` · ${o.grupo_parlamentario}` : ''}` : '-';
   };
 
   const cb = s.combo_breaker || {};
   const bc = s.bocachancla || {};
-  const cbLabel = cb.politico ? `${formatNombre(cb.politico)} · ${cb.partido}` : '-';
-  const bcLabel = bc.politico ? `${formatNombre(bc.politico)} · ${bc.partido}` : '-';
+  const cbLabel = cb.politico ? `${formatNombre(cb.politico)} · ${cb.grupo_parlamentario ?? cb.partido ?? ''}` : '-';
+  const bcLabel = bc.politico ? `${formatNombre(bc.politico)} · ${bc.grupo_parlamentario ?? bc.partido ?? ''}` : '-';
   const cbSub = cb.fecha ? `${cb.count} confirmados en el pleno del ${new Date(cb.fecha).toLocaleDateString('es-ES')}` : '-';
   const bcSub = bc.fecha ? `${bc.count} falsedades en el pleno del ${new Date(bc.fecha).toLocaleDateString('es-ES')}` : '-';
 
@@ -1750,8 +1755,8 @@ function renderSuggestions(matches, query) {
   list.innerHTML = matches.map((p, i) => {
     const formattedName = formatNombre(p.nombre_completo);
     const highlighted = highlightMatch(escHtml(formattedName), query);
-    const partido = p.partido
-      ? `<span class="suggestion-partido">· ${escHtml(p.partido)}</span>`
+    const partido = p.grupo_parlamentario
+      ? `<span class="suggestion-partido">· ${escHtml(p.grupo_parlamentario)}</span>`
       : '';
     const gobierno = p.grupo_parlamentario === 'EU Commission' ? '  🏛️' : '';
     return `<li class="suggestion-item" role="option" id="suggestion-${i}" aria-selected="false"
@@ -1871,20 +1876,20 @@ function renderSearchResults(claims, politicianName) {
   }
 
   const total = claims.length;
-  const falsos = claims.filter(c => c.verification?.[0]?.resultado === 'FALSO').length;
+  const falsos = claims.filter(c => c.verification?.[0]?.resultado === 'FALSE').length;
   const pct = total > 0 ? Math.round((falsos / total) * 100) : 0;
   const countBadge = `<div class="search-count-badge">
     <span><strong>${total}</strong> claim${total === 1 ? '' : 's'}</span>
     <span class="badge-sep">·</span>
-    <span><strong>${falsos}</strong> falsa${falsos === 1 ? '' : 's'}</span>
+    <span><strong>${falsos}</strong> false</span>
     <span class="badge-sep">·</span>
-    <span><strong>${pct}%</strong> falsas</span>
+    <span><strong>${pct}%</strong> false</span>
   </div>`;
 
   const groupsHtml = [...grouped.values()].map(({ session, claims: sessionClaims }) => {
     const fecha = session?.fecha
-      ? new Date(session.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
-      : 'Sesión desconocida';
+      ? new Date(session.fecha).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
+      : 'Unknown session';
     const organ = session?.organo ? ` · ${escHtml(session.organo)}` : '';
     return `<section class="search-session-group">
       <h3 class="search-session-header">

@@ -13,7 +13,7 @@
 
   // Cool navy-blue palette tuned to the EU hero image
   const COLORS = [
-    '255, 204, 0',    // EU gold accent
+    '160, 120, 0',    // EU gold accent
     '100, 140, 180',  // steel blue
     '160, 190, 220',  // pale cool blue
     '70, 110, 160',   // muted steel blue

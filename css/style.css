@@ -6,8 +6,8 @@
   --c-border: #1e3050;
   --c-text: #d8e4f0;
   --c-text-muted: #4e6880;
-  --c-accent: #ffcc00;
-  --c-accent-dim: rgba(255, 204, 0, .10);
+  --c-accent: #b08800;
+  --c-accent-dim: rgba(176, 136, 0, .12);
 
   --c-verdadero: #52c97f;
   --c-falso: #e05070;
@@ -80,9 +80,13 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom,
-      rgba(8, 13, 20, .2) 0%,
-      rgba(8, 13, 20, .65) 55%,
+  background:
+    linear-gradient(to right,
+      rgba(8, 13, 20, .55) 0%,
+      rgba(8, 13, 20, 0) 55%),
+    linear-gradient(to bottom,
+      rgba(8, 13, 20, .15) 0%,
+      rgba(8, 13, 20, .55) 50%,
       rgba(8, 13, 20, 1) 100%);
   pointer-events: none;
 }
@@ -107,7 +111,7 @@ body {
   font-weight: 900;
   letter-spacing: -.04em;
   line-height: 1;
-  background: linear-gradient(135deg, #ffe566 0%, #ffcc00 100%);
+  background: linear-gradient(135deg, #c9a020 0%, #b08800 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -150,8 +154,8 @@ body {
 }
 
 .hero-cta--primary:hover {
-  background: #d97090;
-  border-color: #d97090;
+  background: #c9a020;
+  border-color: #c9a020;
 }
 
 .hero-cta--secondary {
@@ -161,7 +165,7 @@ body {
 }
 
 .hero-cta--secondary:hover {
-  background: rgba(255, 204, 0, .22);
+  background: rgba(176, 136, 0, .22);
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
@@ -289,7 +293,7 @@ body {
 }
 
 #filters select:focus {
-  outline: 2px solid rgba(255, 204, 0, .4);
+  outline: 2px solid rgba(176, 136, 0, .4);
   outline-offset: 2px;
 }
 
@@ -349,7 +353,7 @@ body {
 }
 
 #search-claim:focus {
-  outline: 2px solid rgba(255, 204, 0, .4);
+  outline: 2px solid rgba(176, 136, 0, .4);
   outline-offset: 2px;
 }
 
@@ -385,7 +389,7 @@ body {
 }
 #search-busqueda-claim::placeholder { color: var(--c-text-muted); }
 #search-busqueda-claim:hover { border-color: var(--c-accent); }
-#search-busqueda-claim:focus { outline: 2px solid rgba(255, 204, 0, .4); outline-offset: 2px; }
+#search-busqueda-claim:focus { outline: 2px solid rgba(176, 136, 0, .4); outline-offset: 2px; }
 #search-busqueda-claim::-webkit-search-cancel-button { cursor: pointer; opacity: .5; }
 
 .filter-sep {
@@ -573,33 +577,33 @@ body {
 }
 
 .resultado-verdadero {
-  background: rgba(61, 169, 102, .15);
+  background: rgba(82, 201, 127, .15);
   color: var(--c-verdadero);
-  border: 1px solid rgba(61, 169, 102, .4);
+  border: 1px solid rgba(82, 201, 127, .4);
 }
 
 .resultado-falso {
-  background: rgba(196, 62, 94, .15);
+  background: rgba(224, 80, 112, .15);
   color: var(--c-falso);
-  border: 1px solid rgba(196, 62, 94, .4);
+  border: 1px solid rgba(224, 80, 112, .4);
 }
 
 .resultado-enganoso {
-  background: rgba(176, 120, 37, .15);
+  background: rgba(212, 148, 58, .15);
   color: var(--c-enganoso);
-  border: 1px solid rgba(176, 120, 37, .4);
+  border: 1px solid rgba(212, 148, 58, .4);
 }
 
 .resultado-parcial {
-  background: rgba(56, 144, 188, .15);
+  background: rgba(74, 176, 224, .15);
   color: var(--c-parcial);
-  border: 1px solid rgba(56, 144, 188, .4);
+  border: 1px solid rgba(74, 176, 224, .4);
 }
 
 .resultado-nv {
-  background: rgba(92, 74, 82, .2);
-  color: #8a7880;
-  border: 1px solid rgba(92, 74, 82, .35);
+  background: rgba(58, 80, 104, .2);
+  color: #6a8ea8;
+  border: 1px solid rgba(58, 80, 104, .35);
 }
 
 /* ── Claim text ───────────────────────────────────────────────────────────── */
@@ -700,20 +704,20 @@ body {
 }
 
 .tag-tematico {
-  background: rgba(255, 204, 0, .08);
-  border-color: rgba(255, 204, 0, .22);
-  color: #ffe566;
+  background: rgba(176, 136, 0, .08);
+  border-color: rgba(176, 136, 0, .22);
+  color: #c9a020;
 }
 
 .tag-geo {
-  background: rgba(56, 144, 188, .07);
-  border-color: rgba(56, 144, 188, .22);
+  background: rgba(74, 176, 224, .07);
+  border-color: rgba(74, 176, 224, .22);
   color: #5bbde0;
 }
 
 .tag-tipo {
-  background: rgba(61, 169, 102, .07);
-  border-color: rgba(61, 169, 102, .22);
+  background: rgba(82, 201, 127, .07);
+  border-color: rgba(82, 201, 127, .22);
   color: #70cc90;
 }
 
@@ -753,8 +757,8 @@ body {
 }
 
 .detail-errores dd {
-  background: rgba(196, 62, 94, .08);
-  border: 1px solid rgba(196, 62, 94, .2);
+  background: rgba(224, 80, 112, .08);
+  border: 1px solid rgba(224, 80, 112, .2);
   border-radius: var(--radius-sm);
   padding: .5rem .75rem;
   color: var(--c-falso);
@@ -839,14 +843,14 @@ body {
 }
 
 .source-tipo--primaria {
-  background: rgba(255, 204, 0, .15);
-  border: 1px solid rgba(255, 204, 0, .35);
+  background: rgba(176, 136, 0, .15);
+  border: 1px solid rgba(176, 136, 0, .35);
   color: var(--c-accent);
 }
 
 .source-tipo--academica {
-  background: rgba(176, 120, 37, .12);
-  border: 1px solid rgba(176, 120, 37, .3);
+  background: rgba(212, 148, 58, .12);
+  border: 1px solid rgba(212, 148, 58, .3);
   color: var(--c-enganoso);
 }
 
@@ -865,9 +869,9 @@ body {
 
 /* ── Primary source item highlight ───────────────────────────────────────── */
 .fuente-item--primary {
-  border-left: 2px solid rgba(255, 204, 0, .35);
+  border-left: 2px solid rgba(176, 136, 0, .35);
   padding-left: calc(1rem - 2px);
-  background: rgba(255, 204, 0, .04);
+  background: rgba(176, 136, 0, .04);
   border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
   margin-left: -.2rem;
   padding-right: .35rem;
@@ -1731,7 +1735,7 @@ body {
 
 .session-cal-trigger[aria-expanded="true"] {
   border-color: var(--c-accent);
-  outline: 2px solid rgba(255, 204, 0, .3);
+  outline: 2px solid rgba(176, 136, 0, .3);
   outline-offset: 2px;
 }
 
@@ -1832,14 +1836,14 @@ body {
 .cal-day--has-session {
   background: var(--c-accent-dim);
   color: var(--c-accent);
-  border-color: rgba(255, 204, 0, .25);
+  border-color: rgba(176, 136, 0, .25);
   cursor: pointer;
   font-weight: 700;
   transition: background .12s, border-color .12s;
 }
 
 .cal-day--has-session:hover {
-  background: rgba(255, 204, 0, .22);
+  background: rgba(176, 136, 0, .22);
   border-color: var(--c-accent);
 }
 
@@ -1910,7 +1914,7 @@ body {
 
 .ms-trigger[aria-expanded="true"] {
   border-color: var(--c-accent);
-  outline: 2px solid rgba(255, 204, 0, .3);
+  outline: 2px solid rgba(176, 136, 0, .3);
   outline-offset: 2px;
 }
 
@@ -1930,7 +1934,7 @@ body {
   padding: .12rem .45rem;
   border-radius: 20px;
   background: var(--c-accent-dim);
-  border: 1px solid rgba(255, 204, 0, .35);
+  border: 1px solid rgba(176, 136, 0, .35);
   color: var(--c-accent);
   font-size: .72rem;
   font-weight: 600;
@@ -2105,7 +2109,7 @@ body {
   padding: .22rem .7rem;
   border-radius: 20px;
   background: none;
-  border: 1px solid rgba(255, 204, 0, .35);
+  border: 1px solid rgba(176, 136, 0, .35);
   color: var(--c-accent);
   font-size: .72rem;
   font-family: inherit;

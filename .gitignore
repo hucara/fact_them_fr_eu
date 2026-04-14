@@ -2,4 +2,5 @@
 .DS_Store
 DESIGN.md
 .env
+__pycache__/*
 _debug_server.py
