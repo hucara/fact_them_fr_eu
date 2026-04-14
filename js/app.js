@@ -989,7 +989,7 @@ function slugify(text, id) {
 }
 
 function claimPageUrl(claim) {
-  return `/claim/${slugify(claim.texto_normalizado, claim.id)}/`;
+  return `/claim/${slugify(claim.texto_normalizado, claim.id)}.html`;
 }
 
 // ─── Share ────────────────────────────────────────────────────────────────────

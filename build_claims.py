@@ -26,7 +26,7 @@ except ImportError:
 # ── Config ────────────────────────────────────────────────────────────────────
 SUPABASE_URL  = os.environ.get("SUPABASE_URL",  "https://ekjwtubwiyogmrrzuqaa.supabase.co")
 SUPABASE_ANON = os.environ.get("SUPABASE_ANON", "sb_publishable_vXpAYlgmIUm2T7XszzPu2w_TlAxfqgR")
-BASE_URL      = "https://facthem.eu"
+BASE_URL      = "https://hucara.github.io/fact_them_fr_eu"
 OUT_DIR       = Path(__file__).parent / "claim"
 SITEMAP_PATH  = Path(__file__).parent / "sitemap.xml"
 TODAY         = date.today().isoformat()
@@ -248,7 +248,7 @@ def build_claim_review_schema(claim, slug, pol_name, session_date):
     schema = {
         "@context": "https://schema.org",
         "@type": "ClaimReview",
-        "url": f"{BASE_URL}/claim/{slug}/",
+        "url": f"{BASE_URL}/claim/{slug}.html",
         "claimReviewed": str(claim.get("texto_normalizado") or "").strip(),
         "datePublished": session_date or TODAY,
         "author": {
@@ -298,7 +298,7 @@ def render_page(claim, slug, session_date):
              if pol_nombre else f"{resultado_label} | Facthem EU")
     desc_text = str(claim.get("texto_normalizado") or "").strip()
     desc      = (desc_text[:157] + "…") if len(desc_text) > 160 else desc_text
-    canon_url = f"{BASE_URL}/claim/{slug}/"
+    canon_url = f"{BASE_URL}/claim/{slug}.html"
     schema_ld = build_claim_review_schema(claim, slug, pol_nombre, session_date)
 
     # ── Politician line ──
@@ -389,10 +389,10 @@ def render_page(claim, slug, session_date):
   <meta name="twitter:image"       content="{BASE_URL}/assets/portada.webp" />
 
   <!-- Favicon -->
-  <link rel="icon" href="/assets/favicon.ico" sizes="any" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  <link rel="icon" href="../assets/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
   <meta name="theme-color" content="#080d14" />
 
   <!-- ClaimReview structured data -->
@@ -411,8 +411,8 @@ def render_page(claim, slug, session_date):
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
   </noscript>
 
-  <!-- Site styles (absolute path — resolves from domain root on GitHub Pages) -->
-  <link rel="stylesheet" href="/css/style.css" />
+  <!-- Site styles -->
+  <link rel="stylesheet" href="../css/style.css" />
 
   <style>
     /* ── Claim page layout ── */
@@ -590,7 +590,7 @@ def update_sitemap(claim_slugs):
         )
     for slug in sorted(claim_slugs):
         lines.append(
-            f"  <url>\n    <loc>{BASE_URL}/claim/{slug}/</loc>\n"
+            f"  <url>\n    <loc>{BASE_URL}/claim/{slug}.html</loc>\n"
             f"    <lastmod>{TODAY}</lastmod>\n    <changefreq>monthly</changefreq>\n"
             f"    <priority>0.7</priority>\n  </url>"
         )
@@ -621,9 +621,8 @@ def main():
         try:
             slug         = slugify(str(claim.get("texto_normalizado") or ""), claim["id"])
             session_date = session_dates.get(claim.get("session_id"), "")
-            page_dir     = OUT_DIR / slug
-            page_dir.mkdir(exist_ok=True)
-            (page_dir / "index.html").write_text(
+            OUT_DIR.mkdir(exist_ok=True)
+            (OUT_DIR / f"{slug}.html").write_text(
                 render_page(claim, slug, session_date), encoding="utf-8"
             )
             generated.append(slug)
