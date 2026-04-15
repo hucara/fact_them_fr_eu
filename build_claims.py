@@ -27,7 +27,7 @@ except ImportError:
 # ── Config ────────────────────────────────────────────────────────────────────
 SUPABASE_URL  = os.environ.get("SUPABASE_URL",  "https://ekjwtubwiyogmrrzuqaa.supabase.co")
 SUPABASE_ANON = os.environ.get("SUPABASE_ANON", "sb_publishable_vXpAYlgmIUm2T7XszzPu2w_TlAxfqgR")
-BASE_URL      = "https://hucara.github.io/fact_them_fr_eu"
+BASE_URL      = "https://facthem.eu"
 OUT_DIR       = Path(__file__).parent / "claim"
 SITEMAP_PATH  = Path(__file__).parent / "sitemap.xml"
 TODAY         = date.today().isoformat()
