@@ -447,6 +447,15 @@ def render_page(claim, slug, session_date):
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" />
   </noscript>
 
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-49K9GGWS5K"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){{dataLayer.push(arguments);}}
+    gtag('js', new Date());
+    gtag('config', 'G-49K9GGWS5K');
+  </script>
+
   <!-- Site styles -->
   <link rel="stylesheet" href="../css/style.css" />
 
