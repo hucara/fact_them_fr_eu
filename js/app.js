@@ -1527,8 +1527,8 @@ function renderDashboard(s) {
   const bc = s.bocachancla || {};
   const cbLabel = cb.politico ? `${formatNombre(cb.politico)} · ${cb.grupo_parlamentario ?? cb.partido ?? ''}` : '-';
   const bcLabel = bc.politico ? `${formatNombre(bc.politico)} · ${bc.grupo_parlamentario ?? bc.partido ?? ''}` : '-';
-  const cbSub = cb.fecha ? `${cb.count} confirmados en el pleno del ${new Date(cb.fecha).toLocaleDateString('es-ES')}` : '-';
-  const bcSub = bc.fecha ? `${bc.count} falsedades en el pleno del ${new Date(bc.fecha).toLocaleDateString('es-ES')}` : '-';
+  const cbSub = cb.fecha ? `${cb.count} confirmed in session on ${new Date(cb.fecha).toLocaleDateString('es-ES')}` : '-';
+  const bcSub = bc.fecha ? `${bc.count} false/misleading in session on ${new Date(bc.fecha).toLocaleDateString('es-ES')}` : '-';
 
   const temaLabel = (f) => {
     const name = d(f).name;
