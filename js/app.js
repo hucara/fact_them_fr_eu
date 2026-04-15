@@ -993,8 +993,8 @@ function slugify(text, id) {
   return slug ? `${slug}-${shortId}` : shortId;
 }
 
-const SITE_ORIGIN = 'https://hucara.github.io';
-const SITE_BASE   = '/fact_them_fr_eu';
+const SITE_ORIGIN = 'https://facthem.eu';
+const SITE_BASE   = '';
 
 function claimPageUrl(claim) {
   return `${SITE_BASE}/claim/${slugify(claim.texto_normalizado, claim.id)}.html`;
