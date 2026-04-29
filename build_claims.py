@@ -680,7 +680,7 @@ STATIC_URLS = [
 ]
 
 
-def update_sitemap(claim_slugs):
+def update_sitemap(slug_dates):
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
@@ -690,15 +690,15 @@ def update_sitemap(claim_slugs):
             f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{lastmod}</lastmod>\n"
             f"    <changefreq>{changefreq}</changefreq>\n    <priority>{priority}</priority>\n  </url>"
         )
-    for slug in sorted(claim_slugs):
+    for slug, lastmod in sorted(slug_dates.items()):
         lines.append(
             f"  <url>\n    <loc>{BASE_URL}/claim/{slug}.html</loc>\n"
-            f"    <lastmod>{TODAY}</lastmod>\n    <changefreq>monthly</changefreq>\n"
+            f"    <lastmod>{lastmod or TODAY}</lastmod>\n    <changefreq>monthly</changefreq>\n"
             f"    <priority>0.7</priority>\n  </url>"
         )
     lines.append("</urlset>")
     SITEMAP_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"  sitemap.xml updated — {len(claim_slugs)} claim URLs")
+    print(f"  sitemap.xml updated — {len(slug_dates)} claim URLs")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -716,7 +716,7 @@ def main():
 
     OUT_DIR.mkdir(exist_ok=True)
 
-    generated, errors = [], []
+    generated, errors = {}, []
 
     print("Generating pages…")
     for claim in claims:
@@ -727,7 +727,7 @@ def main():
             (OUT_DIR / f"{slug}.html").write_text(
                 render_page(claim, slug, session_date), encoding="utf-8"
             )
-            generated.append(slug)
+            generated[slug] = session_date or TODAY
         except Exception as exc:
             errors.append((claim.get("id"), str(exc)))
 
