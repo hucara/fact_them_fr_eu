@@ -769,18 +769,64 @@ def generate_archive(claims_data):
   <link rel="canonical" href="{BASE_URL}/archive.html" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    body {{ max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; font-family: Inter, sans-serif; }}
-    h1   {{ font-size: 1.4rem; margin-bottom: 2rem; }}
-    h2   {{ font-size: 1rem; font-weight: 700; margin: 2rem 0 .5rem; color: #b08800; }}
-    ul   {{ margin: 0 0 1rem; padding-left: 1.2rem; }}
-    li   {{ margin: .25rem 0; font-size: .9rem; }}
-    a    {{ color: #1a1a2e; }}
+    .archive-page {{
+      flex: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 3rem 1.75rem 5rem;
+    }}
+    .archive-page h1 {{
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: -.03em;
+      background: linear-gradient(135deg, #c9a020 0%, #b08800 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 2rem;
+    }}
+    .archive-page h2 {{
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--c-text-muted);
+      margin: 2rem 0 .5rem;
+    }}
+    .archive-page ul {{
+      margin: 0 0 .5rem;
+      padding-left: 1.2rem;
+    }}
+    .archive-page li {{
+      margin: .3rem 0;
+      font-size: .88rem;
+      line-height: 1.5;
+    }}
+    .archive-page a {{
+      color: var(--c-accent);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(160,120,0,.3);
+    }}
+    .archive-page a:hover {{ border-color: var(--c-accent); }}
+    .archive-back {{
+      font-size: .85rem;
+      color: var(--c-text-muted);
+      margin-bottom: 2rem;
+      display: block;
+    }}
   </style>
 </head>
 <body>
-  <h1>All claims — Facthem EU</h1>
-  <p><a href="{BASE_URL}/">← Back to Facthem EU</a></p>
+  <header class="site-header">
+    <nav class="tabs">
+      <a href="{BASE_URL}/" class="tab-button" style="text-decoration:none">← Back</a>
+    </nav>
+  </header>
+  <div class="archive-page">
+    <h1>All claims</h1>
 {body}
+  </div>
 </body>
 </html>
 """
