@@ -47,7 +47,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
-
-      - name: Ping Google about updated sitemap
-        run: |
-          curl -s "https://www.google.com/ping?sitemap=https://facthem.eu/sitemap.xml" || true

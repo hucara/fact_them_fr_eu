@@ -605,7 +605,17 @@ def render_page(claim, slug, session_date):
     </div>
   </div>
 
-  <p class="cp-brand">facthem.eu</p>
+  <p class="cp-brand">
+    <a href="{BASE_URL}/" style="color:inherit;text-decoration:none">facthem.eu</a>
+    &nbsp;·&nbsp;
+    <a href="{BASE_URL}/methodology.html" style="color:inherit;text-decoration:none">Methodology</a>
+    &nbsp;·&nbsp;
+    <a href="{BASE_URL}/about.html" style="color:inherit;text-decoration:none">About</a>
+    &nbsp;·&nbsp;
+    <a href="{BASE_URL}/legal.html" style="color:inherit;text-decoration:none">Legal</a>
+    &nbsp;·&nbsp;
+    <a href="{BASE_URL}/archive.html" style="color:inherit;text-decoration:none">All claims</a>
+  </p>
 
   <script>
     // Copy link
@@ -674,31 +684,108 @@ def fetch_session_dates(supabase):
 # ── Sitemap ───────────────────────────────────────────────────────────────────
 
 STATIC_URLS = [
-    ("https://facthem.eu/",           "2026-04-13", "weekly",  "1.0"),
-    ("https://facthem.eu/aviso.html", "2026-04-13", "yearly",  "0.3"),
-    ("https://facthem.eu/blog.html",  "2026-04-13", "monthly", "0.5"),
+    ("https://facthem.eu/",           "2026-04-13T00:00:00+00:00", "weekly",  "1.0"),
+    ("https://facthem.eu/legal.html",       "2026-04-13T00:00:00+00:00", "yearly",  "0.3"),
+    ("https://facthem.eu/methodology.html", "2026-04-30T00:00:00+00:00", "yearly",  "0.4"),
+    ("https://facthem.eu/about.html",       "2026-04-30T00:00:00+00:00", "yearly",  "0.4"),
+    ("https://facthem.eu/blog.html",  "2026-04-13T00:00:00+00:00", "monthly", "0.5"),
 ]
 
 
+def _iso(date_str):
+    """Convert YYYY-MM-DD (or already full ISO) to full ISO-8601 with UTC offset."""
+    if not date_str:
+        return f"{TODAY}T00:00:00+00:00"
+    if "T" in date_str:
+        return date_str
+    return f"{date_str}T00:00:00+00:00"
+
+
+def _loc(url):
+    """XML-escape a URL for use inside <loc>. Slugs are ASCII-safe but guard anyway."""
+    return (url.replace("&", "&amp;")
+               .replace('"', "&quot;")
+               .replace("'", "&apos;")
+               .replace("<", "&lt;")
+               .replace(">", "&gt;"))
+
+
 def update_sitemap(slug_dates):
-    lines = [
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>\n',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n',
     ]
     for loc, lastmod, changefreq, priority in STATIC_URLS:
-        lines.append(
-            f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{lastmod}</lastmod>\n"
-            f"    <changefreq>{changefreq}</changefreq>\n    <priority>{priority}</priority>\n  </url>"
+        parts.append(
+            f"  <url>\n    <loc>{_loc(loc)}</loc>\n    <lastmod>{_iso(lastmod)}</lastmod>\n"
+            f"    <changefreq>{changefreq}</changefreq>\n    <priority>{priority}</priority>\n  </url>\n"
         )
     for slug, lastmod in sorted(slug_dates.items()):
-        lines.append(
-            f"  <url>\n    <loc>{BASE_URL}/claim/{slug}.html</loc>\n"
-            f"    <lastmod>{lastmod or TODAY}</lastmod>\n    <changefreq>monthly</changefreq>\n"
-            f"    <priority>0.7</priority>\n  </url>"
+        url = f"{BASE_URL}/claim/{slug}.html"
+        parts.append(
+            f"  <url>\n    <loc>{_loc(url)}</loc>\n    <lastmod>{_iso(lastmod)}</lastmod>\n"
+            f"    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n"
         )
-    lines.append("</urlset>")
-    SITEMAP_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    parts.append("</urlset>\n")
+    # Write without BOM, UTF-8, exact ending
+    SITEMAP_PATH.write_bytes("".join(parts).encode("utf-8"))
     print(f"  sitemap.xml updated — {len(slug_dates)} claim URLs")
+
+
+# ── Archive page ──────────────────────────────────────────────────────────────
+
+ARCHIVE_PATH = Path(__file__).parent / "archive.html"
+
+
+def generate_archive(claims_data):
+    """
+    Build a plain-HTML archive page listing every claim with a bare <a href>.
+    No JS required — pure link graph for crawlers.
+    Groups claims by MEP name alphabetically.
+    """
+    by_mep = {}
+    for slug, claim in claims_data:
+        pol = claim.get("politician") or {}
+        name = format_nombre(pol.get("nombre_completo", "")) or "Unknown MEP"
+        by_mep.setdefault(name, []).append((slug, claim))
+
+    rows = []
+    for name in sorted(by_mep):
+        rows.append(f'  <h2>{esc(name)}</h2>\n  <ul>')
+        for slug, claim in by_mep[name]:
+            text = esc(str(claim.get("texto_normalizado") or slug).strip()[:120])
+            url  = f"{BASE_URL}/claim/{slug}.html"
+            rows.append(f'    <li><a href="{url}">{text}</a></li>')
+        rows.append("  </ul>")
+
+    body = "\n".join(rows)
+    page = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All claims archive — Facthem EU</title>
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="{BASE_URL}/archive.html" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {{ max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; font-family: Inter, sans-serif; }}
+    h1   {{ font-size: 1.4rem; margin-bottom: 2rem; }}
+    h2   {{ font-size: 1rem; font-weight: 700; margin: 2rem 0 .5rem; color: #b08800; }}
+    ul   {{ margin: 0 0 1rem; padding-left: 1.2rem; }}
+    li   {{ margin: .25rem 0; font-size: .9rem; }}
+    a    {{ color: #1a1a2e; }}
+  </style>
+</head>
+<body>
+  <h1>All claims — Facthem EU</h1>
+  <p><a href="{BASE_URL}/">← Back to Facthem EU</a></p>
+{body}
+</body>
+</html>
+"""
+    ARCHIVE_PATH.write_text(page, encoding="utf-8")
+    print(f"  archive.html written — {sum(len(v) for v in by_mep.values())} claims, {len(by_mep)} MEPs")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -739,6 +826,17 @@ def main():
 
     print("Updating sitemap…")
     update_sitemap(generated)
+
+    print("Generating archive page…")
+    claims_with_slugs = []
+    for claim in claims:
+        try:
+            slug = slugify(str(claim.get("texto_normalizado") or ""), claim["id"])
+            claims_with_slugs.append((slug, claim))
+        except Exception:
+            pass
+    generate_archive(claims_with_slugs)
+
     print("Done.")
 
 
