@@ -290,32 +290,52 @@ def build_claim_review_schema(claim, slug, pol_name, session_date):
     v = v[0] if isinstance(v, list) and v else (v if isinstance(v, dict) else {})
     resultado_key = (v.get("resultado") or "").upper()
     rating_val, rating_name = CLAIM_REVIEW_RATINGS.get(resultado_key, (3, "Unverifiable"))
+    claim_text = str(claim.get("texto_normalizado") or "").strip()
+    claim_url = f"{BASE_URL}/claim/{slug}.html"
+    published_date = session_date or TODAY
+
+    item_reviewed = {
+        "@type": "Claim",
+        "name": claim_text,
+        "datePublished": published_date,
+        "appearance": {
+            "@type": "CreativeWork",
+            "name": "European Parliament debate intervention",
+            "datePublished": published_date,
+        },
+    }
+    if pol_name:
+        item_reviewed["author"] = {
+            "@type": "Person",
+            "name": pol_name,
+        }
 
     schema = {
         "@context": "https://schema.org",
         "@type": "ClaimReview",
-        "url": f"{BASE_URL}/claim/{slug}.html",
-        "claimReviewed": str(claim.get("texto_normalizado") or "").strip(),
-        "datePublished": session_date or TODAY,
+        "@id": f"{claim_url}#claimreview",
+        "url": claim_url,
+        "headline": f"Fact check: {claim_text[:95]}",
+        "claimReviewed": claim_text,
+        "datePublished": published_date,
+        "dateModified": TODAY,
+        "inLanguage": "en",
         "author": {
             "@type": "Organization",
             "name": "Facthem EU",
             "url": BASE_URL,
             "sameAs": ["https://twitter.com/facthem_eu"],
         },
+        "itemReviewed": item_reviewed,
         "reviewRating": {
             "@type": "Rating",
             "ratingValue": rating_val,
             "bestRating": 5,
             "worstRating": 1,
             "alternateName": rating_name,
+            "name": rating_name,
         },
     }
-    if pol_name:
-        schema["itemReviewed"] = {
-            "@type": "Claim",
-            "author": {"@type": "Person", "name": pol_name},
-        }
     return json.dumps(schema, ensure_ascii=False, indent=2)
 
 
