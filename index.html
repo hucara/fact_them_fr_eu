@@ -53,12 +53,6 @@
   }
   </script>
 
-  <!-- Supabase config — safe to expose (anon key, RLS enforced) -->
-  <script>
-    const SUPABASE_URL  = 'https://ekjwtubwiyogmrrzuqaa.supabase.co';
-    const SUPABASE_ANON = 'sb_publishable_vXpAYlgmIUm2T7XszzPu2w_TlAxfqgR';
-  </script>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://esm.sh" crossorigin />
@@ -218,7 +212,7 @@
   </div>
 
   <footer class="site-footer">
-    <p>
+    <p class="footer-links">
       Verifications are generated through an automated AI process and may contain inaccuracies.
       &nbsp;·&nbsp;
       <a href="legal.html" class="footer-link">Legal notice</a>
@@ -231,12 +225,10 @@
       &nbsp;·&nbsp;
       <a href="archive.html" class="footer-link">All claims</a>
     </p>
-    <p>
-      <!-- Follow us on X: <a href="https://x.com/facthem_eu" class="footer-link" target="_blank" rel="noopener">@facthem_eu</a> -->
-      <!-- &nbsp;·&nbsp; -->
+    <p class="footer-links footer-links--secondary">
       Contact: <a class="footer-email" href="#" aria-label="Contact address"></a>
       &nbsp;·&nbsp;
-      ♥ Support us:
+      Support us:
       <a href="https://paypal.me/hcasero" class="donate-btn" target="_blank" rel="noopener">PayPal</a>
       <a href="https://ko-fi.com/hugocasero" class="donate-btn" target="_blank" rel="noopener">Ko-fi</a>
     </p>
@@ -250,6 +242,7 @@
     </div>
   </div>
 
+  <script src="js/config.js"></script>
   <script type="module" src="js/app.js"></script>
   <script>
     window.addEventListener('error', function(e) {
@@ -262,7 +255,7 @@
   <script src="js/mist.js" defer></script>
   <script>
     (function () {
-      var u = 'contact', d = 'facthem' + '.' + 'es';
+      var u = 'contact', d = 'facthem' + '.' + 'eu';
       var el = document.querySelector('.footer-email');
       if (el) { el.href = 'mailto:' + u + '@' + d; el.textContent = u + '\u0040' + d; }
     })();

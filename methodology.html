@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Methodology — Facthem EU</title>
+  <title>Methodology | Facthem EU</title>
   <meta name="description" content="How Facthem EU verifies claims made by Members of the European Parliament using AI models and primary sources." />
   <meta property="og:image" content="https://facthem.eu/assets/portada.webp" />
   <meta name="twitter:image" content="https://facthem.eu/assets/portada.webp" />
@@ -148,29 +148,29 @@
     <h2>Overview</h2>
     <p>
       Facthem EU monitors plenary and committee debates of the European Parliament and automatically
-      fact-checks factual claims made by MEPs. The entire pipeline — from raw transcript to published
-      verdict — runs without human editorial intervention. This page explains every step.
+      fact-checks factual claims made by MEPs. The entire pipeline (from raw transcript to published
+      verdict) runs without human editorial intervention. This page explains every step.
     </p>
 
     <div class="legal-divider"></div>
 
-    <h2>Step 1 — Session scraping and intervention parsing</h2>
+    <h2>Step 1 (Session scraping and intervention parsing)</h2>
     <p>
       Every session of the European Parliament is scraped directly from the
       <a href="https://www.europarl.europa.eu/plenary/en/debates-video.html" target="_blank" rel="noopener">European Parliament's official website</a>.
-      The raw transcript of each session is downloaded and split into individual interventions —
-      one per speaking turn. Each intervention is matched to its MEP, along with available metadata
+      The raw transcript of each session is downloaded and split into individual interventions
+      (one per speaking turn). Each intervention is matched to its MEP, along with available metadata
       such as political group, nationality, and session date. This structured representation is what
       feeds the rest of the pipeline.
     </p>
 
     <div class="legal-divider"></div>
 
-    <h2>Step 2 — Claim extraction, normalisation and enrichment</h2>
+    <h2>Step 2 (Claim extraction, normalisation and enrichment)</h2>
     <p>
       Each intervention is processed by a language model tasked with identifying discrete,
       falsifiable factual claims. Opinions, predictions, rhetorical questions, and normative
-      statements ("we should…", "it would be better if…") are excluded — only claims that assert
+      statements ("we should…", "it would be better if…") are excluded; only claims that assert
       a specific, verifiable fact about the world are extracted.
     </p>
     <p>
@@ -179,24 +179,24 @@
     <ul style="font-size:.95rem;line-height:1.8;padding-left:1.4rem;margin-bottom:1rem">
       <li><strong>Normalises</strong> it into a canonical, context-independent sentence that can be evaluated without reference to the original speech.</li>
       <li><strong>Categorises</strong> it by topic (economy, defence, climate, health, etc.) and geographic scope.</li>
-      <li><strong>Enriches</strong> it with structured metadata — thematic tags, entities mentioned, and any implicit numerical or temporal claims — that improve the quality of the verification step.</li>
+      <li><strong>Enriches</strong> it with structured metadata (thematic tags, entities mentioned, and any implicit numerical or temporal claims) that improve the quality of the verification step.</li>
     </ul>
 
     <div class="legal-divider"></div>
 
-    <h2>Step 3 — Automated verification via LLM + web search</h2>
+    <h2>Step 3 (Automated verification via LLM + web search)</h2>
     <p>
       Each normalised claim is passed to a language model with access to live web search. The model
       autonomously searches for evidence, reasons over what it finds, and produces a verdict. This
-      is not keyword matching — the model reads sources, evaluates their relevance and reliability,
+      is not keyword matching; the model reads sources, evaluates their relevance and reliability,
       and constructs an argument for or against the claim before reaching a conclusion.
     </p>
     <p>
       <strong>A claim can only receive a definitive verdict if the evidence meets one of the following thresholds:</strong>
     </p>
     <ul style="font-size:.95rem;line-height:1.8;padding-left:1.4rem;margin-bottom:1rem">
-      <li><strong>1 primary official source</strong> — a public institution, official statistical body, or intergovernmental organisation that directly confirms or refutes the claim (Eurostat, ECB, OECD, EUR-Lex, World Bank, etc.), <em>or</em></li>
-      <li><strong>2 independent secondary sources</strong> — separate media outlets, academic publications, or reputable reference bodies that corroborate the same finding without relying on each other.</li>
+      <li><strong>1 primary official source</strong>: a public institution, official statistical body, or intergovernmental organisation that directly confirms or refutes the claim (Eurostat, ECB, OECD, EUR-Lex, World Bank, etc.), <em>or</em></li>
+      <li><strong>2 independent secondary sources</strong>: separate media outlets, academic publications, or reputable reference bodies that corroborate the same finding without relying on each other.</li>
     </ul>
     <p>
       If neither threshold is met, the claim is marked <em>Unverifiable</em> regardless of what the
@@ -227,20 +227,12 @@
           <td>The claim is broadly accurate but omits important context, qualifications, or caveats that materially affect its interpretation.</td>
         </tr>
         <tr>
-          <td>🔸 Inaccurate</td>
-          <td>The claim contains factual errors but is not wholly false — the underlying direction or intention may be correct while specific figures or details are wrong.</td>
-        </tr>
-        <tr>
           <td>🟠 Overestimated</td>
           <td>The claim asserts a value or magnitude that is verifiably higher than what the evidence supports.</td>
         </tr>
         <tr>
           <td>🟠 Underestimated</td>
           <td>The claim asserts a value or magnitude that is verifiably lower than what the evidence supports.</td>
-        </tr>
-        <tr>
-          <td>🟠 Out of context</td>
-          <td>The claim is literally accurate but presented in a way that creates a misleading impression by omitting decisive context.</td>
         </tr>
         <tr>
           <td>❌ False</td>
@@ -258,7 +250,7 @@
     <h2>Confidence score</h2>
     <p>
       Each verdict is accompanied by a confidence score from 0 to 100. This score reflects the
-      model's internal certainty about the verdict given the available evidence — it is
+      model's internal certainty about the verdict given the available evidence; it is
       <strong>not</strong> an objective probability. A high score means the evidence was clear and
       consistent; a low score means the evidence was ambiguous, sparse, or conflicting.
     </p>
@@ -276,18 +268,18 @@
       that source is determinative and secondary sources are listed as supplementary only.
     </p>
     <p>
-      <strong>Primary sources</strong> — data and documents published directly by public institutions:
+      <strong>Primary sources</strong>: data and documents published directly by public institutions:
       the <a href="https://eur-lex.europa.eu/oj/direct-access.html" target="_blank" rel="noopener">Official Journal of the European Union</a>,
       <a href="https://ec.europa.eu/eurostat" target="_blank" rel="noopener">Eurostat</a>,
       the <a href="https://www.ecb.europa.eu" target="_blank" rel="noopener">European Central Bank</a>,
       and reports from the OECD, IMF, World Bank, and other intergovernmental bodies.
     </p>
     <p>
-      <strong>Academic sources</strong> — peer-reviewed publications in indexed journals. Weighted
+      <strong>Academic sources</strong>: peer-reviewed publications in indexed journals. Weighted
       below primary institutional data but above general press.
     </p>
     <p>
-      <strong>Secondary sources</strong> — specialised reference press, independent analytical
+      <strong>Secondary sources</strong>: specialised reference press, independent analytical
       bodies, and reputable news organisations. Used when primary sources are insufficient or
       unavailable. Carry less weight in the final verdict.
     </p>

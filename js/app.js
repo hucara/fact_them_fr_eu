@@ -68,9 +68,12 @@ let msResultado = null, msTematico = null, msPolitico = null;
 // ─── Búsqueda state ───────────────────────────────────────────────────────────
 let allPoliticians = [];
 let searchLoaded = false;
+let politiciansLoadPromise = null;
+let politicianAutocompleteReady = false;
 let activeSearchIndex = -1;
 let searchClaimsCache = {};
 let currentSearchClaims = [];
+let currentPoliticianSlug = '';
 
 // ─── Búsqueda filter state ────────────────────────────────────────────────────
 const searchFilterState = { resultado: [], tematico: [] };
@@ -78,19 +81,101 @@ let msSearchResultado = null, msSearchTematico = null;
 let claimCount = 0;
 let headerStatsBase = '';
 
+const TAB_TO_SLUG = {
+  'view-sesiones': 'sessions',
+  'view-busqueda': 'meps',
+  'view-estadisticas': 'statistics',
+};
+
+const SLUG_TO_TAB = {
+  sessions: 'view-sesiones',
+  session: 'view-sesiones',
+  meps: 'view-busqueda',
+  mep: 'view-busqueda',
+  politicians: 'view-busqueda',
+  parliamentarians: 'view-busqueda',
+  statistics: 'view-estadisticas',
+  stats: 'view-estadisticas',
+};
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', boot);
 
 async function boot() {
   setupTabs();
-  history.replaceState({ tab: 'view-sesiones' }, '', window.location.href);
+  applyUrlTab(true);
   setupHeroCTAs();
   setupFilters();
   setupFiltersToggle();
   setupSearchFilters();
   setupModal();
   setupShare();
-  await Promise.all([loadSessions(), handleClaimDeepLink()]);
+  await Promise.all([loadSessions(), handleClaimDeepLink(), handlePoliticianDeepLink()]);
+}
+
+function applyUrlTab(initial = false) {
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('tab');
+  const tabId = SLUG_TO_TAB[slug] || (params.get('politician') ? 'view-busqueda' : 'view-sesiones');
+  activateTab(tabId, false);
+  if (initial) {
+    history.replaceState({ tab: tabId, politician: params.get('politician') }, '', window.location.href);
+  }
+}
+
+function updateAppUrl(tabId, { politicianSlug = currentPoliticianSlug, replace = false } = {}) {
+  const params = new URLSearchParams(window.location.search);
+  params.delete('claim');
+  params.delete('session');
+  params.set('tab', TAB_TO_SLUG[tabId] || TAB_TO_SLUG['view-sesiones']);
+
+  if (tabId === 'view-busqueda' && politicianSlug) {
+    params.set('politician', politicianSlug);
+  } else {
+    params.delete('politician');
+  }
+
+  const query = params.toString();
+  const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+  const nextState = { tab: tabId, politician: params.get('politician') };
+  const method = replace ? 'replaceState' : 'pushState';
+  history[method](nextState, '', nextUrl);
+}
+
+function updateSessionUrl(sessionIds, { replace = false } = {}) {
+  const ids = Array.isArray(sessionIds) ? sessionIds : [sessionIds];
+  const params = new URLSearchParams(window.location.search);
+  params.delete('claim');
+  params.delete('politician');
+  params.delete('tab');
+  params.set('session', ids.join(','));
+
+  const query = params.toString();
+  const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+  const method = replace ? 'replaceState' : 'pushState';
+  history[method]({ tab: 'view-sesiones', session: ids }, '', nextUrl);
+}
+
+async function handlePoliticianDeepLink() {
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('politician');
+  if (!slug) {
+    if (document.getElementById('view-busqueda')?.classList.contains('active') && currentPoliticianSlug) {
+      resetPoliticianSearchView();
+    }
+    return;
+  }
+
+  activateTab('view-busqueda', false);
+  await loadPoliticians();
+  const match = allPoliticians.find(p =>
+    slugifyPolitician(formatNombre(p.nombre_completo), politicianSlugParty(p)) === slug);
+  if (match) {
+    selectPolitician(match.id, formatNombre(match.nombre_completo), { updateUrl: false, scrollToResults: true });
+    if (params.get('tab') !== TAB_TO_SLUG['view-busqueda']) {
+      updateAppUrl('view-busqueda', { politicianSlug: slug, replace: true });
+    }
+  }
 }
 
 function setupFiltersToggle() {
@@ -158,7 +243,7 @@ function activateTab(tabId, pushToHistory = true) {
   if (tabId === 'view-estadisticas' && !window.statsLoaded) loadGlobalDashboard();
   if (tabId === 'view-busqueda' && !searchLoaded) loadPoliticians();
   if (pushToHistory) {
-    history.pushState({ tab: tabId }, '', window.location.href);
+    updateAppUrl(tabId);
   }
 }
 
@@ -171,7 +256,9 @@ function setupTabs() {
     });
   });
   window.addEventListener('popstate', e => {
-    if (e.state?.tab) activateTab(e.state.tab, false);
+    applyUrlTab();
+    handlePoliticianDeepLink();
+    handleSessionDeepLink();
   });
 }
 
@@ -185,6 +272,13 @@ function setupHeroCTAs() {
       if (tabBtn) tabBtn.click();
       document.getElementById('app-header')?.scrollIntoView({ behavior: 'smooth' });
     });
+  });
+}
+
+function scrollToClaimPreviews() {
+  requestAnimationFrame(() => {
+    document.getElementById('claims-container')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 }
 
@@ -526,7 +620,7 @@ class SessionCalendar {
 
 // ─── Session selector + content filters ───────────────────────────────────────
 function setupFilters() {
-  sessionCalendar = new SessionCalendar(ids => loadSession(ids));
+  sessionCalendar = new SessionCalendar(ids => loadSession(ids, { updateUrl: true }));
 
   msResultado = new MultiSelect(
     document.getElementById('ms-resultado'), [],
@@ -576,19 +670,42 @@ async function loadSessions() {
   }
 
   sessionCalendar.setSessions(sessions);
-  // Honour ?session= deep-link from claim pages, otherwise default to latest
-  const sessionParam = new URLSearchParams(window.location.search).get('session');
-  const defaultId = (sessionParam && sessions.find(s => s.id === sessionParam))
-    ? sessionParam
-    : sessions[0].id;
-  sessionCalendar.selectSession(defaultId, /* silent */ true);
-  loadSession([defaultId]);
+
+  const urlSessionIds = getSessionIdsFromUrl().filter(id => sessions.some(s => s.id === id));
+  const idsToLoad = urlSessionIds.length ? urlSessionIds : [sessions[0].id];
+  sessionCalendar.selectSession(idsToLoad[0], /* silent */ true);
+  if (idsToLoad.length > 1) {
+    const selectedSessions = idsToLoad.map(id => sessions.find(s => s.id === id)).filter(Boolean);
+    sessionCalendar.updateLabel(selectedSessions);
+  }
+  return loadSession(idsToLoad, { scrollToClaims: urlSessionIds.length > 0 });
+}
+
+function getSessionIdsFromUrl() {
+  const raw = new URLSearchParams(window.location.search).get('session');
+  return raw ? raw.split(',').map(s => s.trim()).filter(Boolean) : [];
+}
+
+async function handleSessionDeepLink() {
+  const ids = getSessionIdsFromUrl();
+  if (!ids.length || !sessionCalendar?.sessions?.length) return;
+  const validIds = ids.filter(id => sessionCalendar.sessions.some(s => s.id === id));
+  if (!validIds.length) return;
+
+  activateTab('view-sesiones', false);
+  sessionCalendar.selectSession(validIds[0], /* silent */ true);
+  if (validIds.length > 1) {
+    const selectedSessions = validIds.map(id => sessionCalendar.sessions.find(s => s.id === id)).filter(Boolean);
+    sessionCalendar.updateLabel(selectedSessions);
+  }
+  await loadSession(validIds, { scrollToClaims: true });
 }
 
 // ─── Claims for a session ─────────────────────────────────────────────────────
-async function loadSession(sessionIds) {
+async function loadSession(sessionIds, { updateUrl = false, scrollToClaims = false } = {}) {
   const ids = Array.isArray(sessionIds) ? sessionIds : [sessionIds];
   currentSessionIds = ids;
+  if (updateUrl) updateSessionUrl(ids);
 
   const container = document.getElementById('claims-container');
   container.innerHTML = '<p class="loading">Loading claims…</p>';
@@ -631,6 +748,7 @@ async function loadSession(sessionIds) {
   renderClaims(allClaims);
   updateClaimsCount(allClaims.length, allClaims.length);
   updateFilterPills();
+  if (scrollToClaims) scrollToClaimPreviews();
 }
 
 // ─── Filters ──────────────────────────────────────────────────────────────────
@@ -958,12 +1076,12 @@ function openModal(claim) {
 
     <div class="modal-share">
       <div class="share-wrapper">
-        <button class="share-btn share-btn--labeled" data-claim-id="${claim.id}" aria-label="Share claim">
+        <button class="share-btn" data-claim-id="${claim.id}" aria-label="Share claim">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
             <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
           </svg>
-          Share
+          <span>Share</span>
         </button>
         <div class="share-menu" hidden>${buildShareMenu(claim)}</div>
       </div>
@@ -991,6 +1109,22 @@ function slugify(text, id) {
   const words = s.trim().split(/\s+/).slice(0, 8);
   const slug = words.join('-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   return slug ? `${slug}-${shortId}` : shortId;
+}
+
+function slugifyPlain(text) {
+  let s = String(text || '').trim().toLowerCase();
+  s = s.replace(/[áàäâãå]/g, 'a').replace(/[éèëê]/g, 'e').replace(/[íìïî]/g, 'i')
+       .replace(/[óòöôõ]/g, 'o').replace(/[úùüû]/g, 'u').replace(/ñ/g, 'n').replace(/ç/g, 'c');
+  s = s.replace(/[^a-z0-9\s-]/g, '');
+  return s.trim().split(/\s+/).join('-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+function politicianSlugParty(politician) {
+  return politician?.partido || politician?.grupo_parlamentario || '';
+}
+
+function slugifyPolitician(name, party = '') {
+  return slugifyPlain([name, party].filter(Boolean).join(' '));
 }
 
 const SITE_ORIGIN = 'https://facthem.eu';
@@ -1675,6 +1809,14 @@ function statCardListTemas(title, rows) {
 
 // ─── Búsqueda tab ─────────────────────────────────────────────────────────────
 async function loadPoliticians() {
+  if (allPoliticians.length) return allPoliticians;
+  if (politiciansLoadPromise) return politiciansLoadPromise;
+
+  politiciansLoadPromise = loadPoliticiansOnce();
+  return politiciansLoadPromise;
+}
+
+async function loadPoliticiansOnce() {
   searchLoaded = true;
   const input = document.getElementById('politician-search-input');
   input.placeholder = 'Loading MEPs…';
@@ -1690,11 +1832,16 @@ async function loadPoliticians() {
 
   if (error || !data?.length) {
     input.placeholder = 'Error loading MEPs. Reload the page.';
-    return;
+    politiciansLoadPromise = null;
+    return [];
   }
 
   allPoliticians = data;
-  setupPoliticianAutocomplete();
+  if (!politicianAutocompleteReady) {
+    setupPoliticianAutocomplete();
+    politicianAutocompleteReady = true;
+  }
+  return allPoliticians;
 }
 
 function setupPoliticianAutocomplete() {
@@ -1820,6 +1967,11 @@ function closeSuggestions() {
 }
 
 function clearSearch() {
+  resetPoliticianSearchView({ focus: true });
+  updateAppUrl('view-busqueda', { politicianSlug: '' });
+}
+
+function resetPoliticianSearchView({ focus = false } = {}) {
   const input = document.getElementById('politician-search-input');
   const clearBtn = document.getElementById('search-clear-btn');
   const area = document.getElementById('search-results-area');
@@ -1829,22 +1981,28 @@ function clearSearch() {
   document.getElementById('search-filters').hidden = true;
   resetSearchFilters();
   currentSearchClaims = [];
+  currentPoliticianSlug = '';
   area.innerHTML = `<div class="search-welcome">
     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
     </svg>
     <p>Search for an MEP to see all their verified claims.</p>
   </div>`;
-  input.focus();
+  if (focus) input.focus();
 }
 
-async function selectPolitician(politicianId, politicianName) {
+async function selectPolitician(politicianId, politicianName, { updateUrl = true, scrollToResults = false } = {}) {
   const input = document.getElementById('politician-search-input');
   const area = document.getElementById('search-results-area');
+  const politician = allPoliticians.find(p => String(p.id) === String(politicianId));
+  currentPoliticianSlug = slugifyPolitician(politicianName, politicianSlugParty(politician));
 
   input.value = politicianName;
   closeSuggestions();
   document.getElementById('search-clear-btn').hidden = false;
+  if (updateUrl) {
+    updateAppUrl('view-busqueda', { politicianSlug: currentPoliticianSlug });
+  }
 
   if (searchClaimsCache[politicianId]) {
     currentSearchClaims = searchClaimsCache[politicianId];
@@ -1852,6 +2010,7 @@ async function selectPolitician(politicianId, politicianName) {
     document.getElementById('search-filters').hidden = false;
     populateSearchFilters(currentSearchClaims);
     renderSearchResults(currentSearchClaims, politicianName);
+    if (scrollToResults) scrollToPoliticianResults();
     return;
   }
 
@@ -1881,6 +2040,14 @@ async function selectPolitician(politicianId, politicianName) {
   document.getElementById('search-filters').hidden = false;
   populateSearchFilters(claims);
   renderSearchResults(claims, politicianName);
+  if (scrollToResults) scrollToPoliticianResults();
+}
+
+function scrollToPoliticianResults() {
+  requestAnimationFrame(() => {
+    const target = document.querySelector('#view-busqueda .search-input-area');
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }
 
 function renderSearchResults(claims, politicianName) {
