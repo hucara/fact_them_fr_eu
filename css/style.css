@@ -973,6 +973,7 @@ body {
   padding-top: 1rem;
   border-top: 1px solid var(--c-border);
 }
+.modal-share .share-wrapper { margin-left: 0; }
 .modal-share .share-menu { left: 0; right: auto; }
 
 /* ── States ───────────────────────────────────────────────────────────────── */
@@ -1228,6 +1229,14 @@ body {
   font-size: .8rem;
   color: var(--c-text-muted);
   line-height: 2;
+}
+
+.footer-links {
+  margin: 0;
+}
+
+.footer-links + .footer-links {
+  margin-top: .35rem;
 }
 
 .footer-email,

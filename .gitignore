@@ -2,6 +2,7 @@
 .DS_Store
 DESIGN.md
 .env
-__pycache__/*
+__pycache__/
 _debug_server.py
 claim/
+politician/
