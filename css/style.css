@@ -5,9 +5,9 @@
   --c-surface-2: #121d2a;
   --c-border: #1e3050;
   --c-text: #d8e4f0;
-  --c-text-muted: #4e6880;
-  --c-accent: #b08800;
-  --c-accent-dim: rgba(176, 136, 0, .12);
+  --c-text-muted: #8fa4b8;
+  --c-accent: #d6a70d;
+  --c-accent-dim: rgba(214, 167, 13, .14);
 
   --c-verdadero: #52c97f;
   --c-falso: #e05070;
@@ -111,7 +111,7 @@ body {
   font-weight: 900;
   letter-spacing: -.04em;
   line-height: 1;
-  background: linear-gradient(135deg, #c9a020 0%, #b08800 100%);
+  background: linear-gradient(135deg, #f0c83f 0%, #d6a70d 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -154,8 +154,8 @@ body {
 }
 
 .hero-cta--primary:hover {
-  background: #c9a020;
-  border-color: #c9a020;
+  background: #f0c83f;
+  border-color: #f0c83f;
 }
 
 .hero-cta--secondary {
@@ -165,7 +165,7 @@ body {
 }
 
 .hero-cta--secondary:hover {
-  background: rgba(176, 136, 0, .22);
+  background: rgba(214, 167, 13, .24);
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
@@ -293,7 +293,7 @@ body {
 }
 
 #filters select:focus {
-  outline: 2px solid rgba(176, 136, 0, .4);
+  outline: 2px solid rgba(214, 167, 13, .42);
   outline-offset: 2px;
 }
 
@@ -353,7 +353,7 @@ body {
 }
 
 #search-claim:focus {
-  outline: 2px solid rgba(176, 136, 0, .4);
+  outline: 2px solid rgba(214, 167, 13, .42);
   outline-offset: 2px;
 }
 
@@ -389,7 +389,7 @@ body {
 }
 #search-busqueda-claim::placeholder { color: var(--c-text-muted); }
 #search-busqueda-claim:hover { border-color: var(--c-accent); }
-#search-busqueda-claim:focus { outline: 2px solid rgba(176, 136, 0, .4); outline-offset: 2px; }
+#search-busqueda-claim:focus { outline: 2px solid rgba(214, 167, 13, .42); outline-offset: 2px; }
 #search-busqueda-claim::-webkit-search-cancel-button { cursor: pointer; opacity: .5; }
 
 .filter-sep {
@@ -704,9 +704,9 @@ body {
 }
 
 .tag-tematico {
-  background: rgba(176, 136, 0, .08);
-  border-color: rgba(176, 136, 0, .22);
-  color: #c9a020;
+  background: rgba(214, 167, 13, .1);
+  border-color: rgba(214, 167, 13, .26);
+  color: #f0c83f;
 }
 
 .tag-geo {
@@ -843,8 +843,8 @@ body {
 }
 
 .source-tipo--primaria {
-  background: rgba(176, 136, 0, .15);
-  border: 1px solid rgba(176, 136, 0, .35);
+  background: rgba(214, 167, 13, .18);
+  border: 1px solid rgba(214, 167, 13, .4);
   color: var(--c-accent);
 }
 
@@ -869,9 +869,9 @@ body {
 
 /* ── Primary source item highlight ───────────────────────────────────────── */
 .fuente-item--primary {
-  border-left: 2px solid rgba(176, 136, 0, .35);
+  border-left: 2px solid rgba(214, 167, 13, .4);
   padding-left: calc(1rem - 2px);
-  background: rgba(176, 136, 0, .04);
+  background: rgba(214, 167, 13, .06);
   border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
   margin-left: -.2rem;
   padding-right: .35rem;
@@ -1115,7 +1115,6 @@ body {
   line-height: 1.5;
   margin-top: .4rem;
   font-style: italic;
-  opacity: .75;
 }
 
 .stat-card--list {
@@ -1745,7 +1744,7 @@ body {
 
 .session-cal-trigger[aria-expanded="true"] {
   border-color: var(--c-accent);
-  outline: 2px solid rgba(176, 136, 0, .3);
+  outline: 2px solid rgba(214, 167, 13, .34);
   outline-offset: 2px;
 }
 
@@ -1846,14 +1845,14 @@ body {
 .cal-day--has-session {
   background: var(--c-accent-dim);
   color: var(--c-accent);
-  border-color: rgba(176, 136, 0, .25);
+  border-color: rgba(214, 167, 13, .32);
   cursor: pointer;
   font-weight: 700;
   transition: background .12s, border-color .12s;
 }
 
 .cal-day--has-session:hover {
-  background: rgba(176, 136, 0, .22);
+  background: rgba(214, 167, 13, .26);
   border-color: var(--c-accent);
 }
 
@@ -1924,7 +1923,7 @@ body {
 
 .ms-trigger[aria-expanded="true"] {
   border-color: var(--c-accent);
-  outline: 2px solid rgba(176, 136, 0, .3);
+  outline: 2px solid rgba(214, 167, 13, .34);
   outline-offset: 2px;
 }
 
@@ -1944,7 +1943,7 @@ body {
   padding: .12rem .45rem;
   border-radius: 20px;
   background: var(--c-accent-dim);
-  border: 1px solid rgba(176, 136, 0, .35);
+  border: 1px solid rgba(214, 167, 13, .4);
   color: var(--c-accent);
   font-size: .72rem;
   font-weight: 600;
@@ -2119,7 +2118,7 @@ body {
   padding: .22rem .7rem;
   border-radius: 20px;
   background: none;
-  border: 1px solid rgba(176, 136, 0, .35);
+  border: 1px solid rgba(214, 167, 13, .4);
   color: var(--c-accent);
   font-size: .72rem;
   font-family: inherit;
