@@ -48,6 +48,9 @@ BASE_URL      = "https://facthem.eu"
 OUT_DIR       = Path(__file__).parent / "claim"
 POL_OUT_DIR   = Path(__file__).parent / "politician"
 SITEMAP_PATH  = Path(__file__).parent / "sitemap.xml"
+SITEMAP_STATIC_PATH = Path(__file__).parent / "sitemap-static.xml"
+SITEMAP_POLITICIANS_PATH = Path(__file__).parent / "sitemap-politicians.xml"
+SITEMAP_CLAIMS_PATH = Path(__file__).parent / "sitemap-claims.xml"
 TODAY         = date.today().isoformat()
 
 # ── Label maps (mirror app.js) ────────────────────────────────────────────────
@@ -877,32 +880,56 @@ def _loc(url):
                .replace(">", "&gt;"))
 
 
-def update_sitemap(slug_dates, politician_slugs):
+def _write_urlset(path, entries):
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>\n',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n',
     ]
-    for loc, lastmod, changefreq, priority in STATIC_URLS:
+    for loc, lastmod, changefreq, priority in entries:
         parts.append(
             f"  <url>\n    <loc>{_loc(loc)}</loc>\n    <lastmod>{_iso(lastmod)}</lastmod>\n"
             f"    <changefreq>{changefreq}</changefreq>\n    <priority>{priority}</priority>\n  </url>\n"
         )
+    parts.append("</urlset>\n")
+    path.write_bytes("".join(parts).encode("utf-8"))
+
+
+def _write_sitemap_index(paths):
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>\n',
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n',
+    ]
+    for path in paths:
+        parts.append(
+            f"  <sitemap>\n    <loc>{_loc(f'{BASE_URL}/{path.name}')}</loc>\n"
+            f"    <lastmod>{_iso(TODAY)}</lastmod>\n  </sitemap>\n"
+        )
+    parts.append("</sitemapindex>\n")
+    SITEMAP_PATH.write_bytes("".join(parts).encode("utf-8"))
+
+
+def update_sitemap(slug_dates, politician_slugs):
+    static_entries = list(STATIC_URLS)
+
+    politician_entries = []
     for slug in sorted(politician_slugs):
         url = f"{BASE_URL}/politician/{slug}.html"
-        parts.append(
-            f"  <url>\n    <loc>{_loc(url)}</loc>\n    <lastmod>{_iso(TODAY)}</lastmod>\n"
-            f"    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>\n"
-        )
+        politician_entries.append((url, TODAY, "weekly", "0.6"))
+
+    claim_entries = []
     for slug, lastmod in sorted(slug_dates.items()):
         url = f"{BASE_URL}/claim/{slug}.html"
-        parts.append(
-            f"  <url>\n    <loc>{_loc(url)}</loc>\n    <lastmod>{_iso(lastmod)}</lastmod>\n"
-            f"    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n"
-        )
-    parts.append("</urlset>\n")
-    # Write without BOM, UTF-8, exact ending
-    SITEMAP_PATH.write_bytes("".join(parts).encode("utf-8"))
-    print(f"  sitemap.xml updated — {len(politician_slugs)} MEPs, {len(slug_dates)} claim URLs")
+        claim_entries.append((url, lastmod, "monthly", "0.7"))
+
+    _write_urlset(SITEMAP_STATIC_PATH, static_entries)
+    _write_urlset(SITEMAP_POLITICIANS_PATH, politician_entries)
+    _write_urlset(SITEMAP_CLAIMS_PATH, claim_entries)
+    _write_sitemap_index([SITEMAP_STATIC_PATH, SITEMAP_POLITICIANS_PATH, SITEMAP_CLAIMS_PATH])
+
+    print(
+        "  sitemap.xml index updated — "
+        f"{len(static_entries)} static, {len(politician_entries)} MEPs, {len(claim_entries)} claim URLs"
+    )
 
 
 # ── Archive page ──────────────────────────────────────────────────────────────
