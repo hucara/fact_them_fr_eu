@@ -1721,11 +1721,11 @@ function renderDashboard(s) {
         polLabel('top_politico_subest_volumen'), `${d('top_politico_subest_volumen').count || 0} underestimated figures`,
         polLabel('top_politico_subest_tasa'), d('top_politico_subest_tasa').count || 0, d('top_politico_subest_tasa').total || 0, d('top_politico_subest_tasa').rate || 0,
         true, 'underestimation', 'The MEP who most often reduces real figures to make them sound less serious.')}
-    ${statCard('The Captain Obvious Group', d('top_partido_impreciso').name || '-', `${d('top_partido_impreciso').count || 0} inaccuracies`, false, 'The group that most often says something so vague it cannot be verified.')}
+    ${statCard('The Captain Obvious Group', d('top_partido_nv_tasa').name || '-', `${Math.round((d('top_partido_nv_tasa').rate || 0) * 100)}% unverifiable · ${d('top_partido_nv_tasa').count || 0} of ${d('top_partido_nv_tasa').total || 0} claims`, false, 'The group with the highest share of claims too vague to verify.')}
     ${statCard('The Cherry-Pickers', d('top_partido_descont').name || '-', `${d('top_partido_descont').count || 0} out-of-context claims`, true, 'The group that most often uses real data stripped of its context to change its meaning.')}
     ${statCardDual('The Master of Empty Words',
-        polLabel('top_politico_impreciso_volumen'), `${d('top_politico_impreciso_volumen').count || 0} inaccurate claims`,
-        polLabel('top_politico_impreciso_tasa'), d('top_politico_impreciso_tasa').count || 0, d('top_politico_impreciso_tasa').total || 0, d('top_politico_impreciso_tasa').rate || 0,
+        polLabel('top_politico_inexacto_volumen'), `${d('top_politico_inexacto_volumen').count || 0} inaccurate claims`,
+        polLabel('top_politico_inexacto_tasa'), d('top_politico_inexacto_tasa').count || 0, d('top_politico_inexacto_tasa').total || 0, d('top_politico_inexacto_tasa').rate || 0,
         false, 'inaccuracy', 'The MEP who most often makes a claim so vague there is no way to verify it.')}
     ${statCardDual('The Context Stripper',
         polLabel('top_politico_descont_volumen'), `${d('top_politico_descont_volumen').count || 0} out-of-context claims`,

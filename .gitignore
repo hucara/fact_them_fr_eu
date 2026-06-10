@@ -6,3 +6,4 @@ __pycache__/
 _debug_server.py
 claim/
 politician/
+.venv
