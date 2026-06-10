@@ -55,6 +55,36 @@ const IMG_COLORS = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
+// Parliamentary group is stored inconsistently (abbreviations + full names).
+// Normalize every variant to its canonical abbreviation; unknown placeholders
+// resolve to '' so the group suffix is omitted. (Mirrors normalize_group in build_claims.py.)
+const GROUP_ALIASES = {
+  'ppe': 'PPE',
+  'epp': 'PPE',
+  'epp group': 'PPE',
+  "group of the european people's party (christian democrats)": 'PPE',
+  's&d': 'S&D',
+  's&d group': 'S&D',
+  'renew': 'Renew',
+  'renew europe': 'Renew',
+  'renew europe group': 'Renew',
+  'verts/ale': 'Verts/ALE',
+  'ecr': 'ECR',
+  'pfe': 'PfE',
+  'the left': 'The Left',
+  'esn': 'ESN',
+  'ni': 'NI',
+  'cargo de gobierno': 'EU Commission', // local SQLite label for Commission members
+};
+const GROUP_UNKNOWN = new Set(['no determinado', 'not determined', 'desconocido', 'n/a']);
+function normalizeGroup(grupo) {
+  const raw = String(grupo ?? '').trim();
+  if (raw === 'EU Commission') return raw; // handled separately via the gobierno marker
+  const key = raw.toLowerCase();
+  if (GROUP_UNKNOWN.has(key)) return '';
+  return GROUP_ALIASES[key] ?? raw;
+}
+
 // ─── State ────────────────────────────────────────────────────────────────────
 let allClaims = [];
 let claimsById = {};
@@ -980,7 +1010,7 @@ function claimCard(claim) {
       <header class="claim-header">
         <div class="claim-meta-top">
           ${pol
-      ? `<span class="politician-name">${escHtml(formatNombre(pol.nombre_completo))}${pol.grupo_parlamentario ? `<span class="politician-partido">· ${escHtml(pol.grupo_parlamentario)}</span>` : ''}</span>`
+      ? (() => { const g = normalizeGroup(pol.grupo_parlamentario); return `<span class="politician-name">${escHtml(formatNombre(pol.nombre_completo))}${g ? `<span class="politician-partido">· ${escHtml(g)}</span>` : ''}</span>`; })()
       : '<span class="politician-name unknown">Unknown MEP</span>'}
         </div>
         <span class="resultado-badge resultado-${resultadoClass}">${resultadoLabel}</span>
@@ -1052,7 +1082,7 @@ function openModal(claim) {
     <header class="claim-header" style="margin-bottom:1.25rem">
       <div class="claim-meta-top">
         ${pol
-      ? `<span class="politician-name" style="font-size:1.05rem">${escHtml(formatNombre(pol.nombre_completo))}${pol.grupo_parlamentario === 'EU Commission' ? `<span class="politician-gobierno" title="EU Commission">🏛️</span>` : ''}${pol.grupo_parlamentario && pol.grupo_parlamentario !== 'EU Commission' ? `<span class="politician-partido">· ${escHtml(pol.grupo_parlamentario)}</span>` : ''}</span>`
+      ? (() => { const g = normalizeGroup(pol.grupo_parlamentario); return `<span class="politician-name" style="font-size:1.05rem">${escHtml(formatNombre(pol.nombre_completo))}${g === 'EU Commission' ? `<span class="politician-gobierno" title="EU Commission">🏛️</span>` : ''}${g && g !== 'EU Commission' ? `<span class="politician-partido">· ${escHtml(g)}</span>` : ''}</span>`; })()
       : '<span class="politician-name unknown">Unknown MEP</span>'}
       </div>
       <span class="resultado-badge resultado-${resultadoClass}">${resultadoLabel}</span>
@@ -1151,7 +1181,8 @@ function buildShareText(claim) {
   const resultadoLabel = v ? formatResultado(v.resultado) : 'Unverified';
   const emoji = resultadoKey ? (RESULTADO_EMOJIS[resultadoKey] ?? '🔍') : '🔍';
   const nombre = pol ? formatNombre(pol.nombre_completo) : 'An MEP';
-  const partido = pol?.grupo_parlamentario ? ` (${pol.grupo_parlamentario})` : '';
+  const grupo = normalizeGroup(pol?.grupo_parlamentario);
+  const partido = grupo ? ` (${grupo})` : '';
   const texto = String(claim.texto_normalizado ?? '').trim();
   const truncated = texto.length > 200 ? texto.slice(0, 200) + '…' : texto;
   return `🔍 ${nombre}${partido} stated: "${truncated}"\n${emoji} ${resultadoLabel} | facthem.eu`;
@@ -1307,7 +1338,7 @@ async function generateShareImage(claim) {
   const c = IMG_COLORS[clsKey] ?? IMG_COLORS.nv;
   const resultadoLabel = v ? formatResultado(v.resultado) : 'Unverified';
   const nombre = pol ? formatNombre(pol.nombre_completo) : 'An MEP';
-  const partido = pol?.grupo_parlamentario ?? '';
+  const partido = normalizeGroup(pol?.grupo_parlamentario);
   const texto = capitalize(String(claim.texto_normalizado ?? '').trim());
   const score = v?.confidence_score != null ? Math.round(v.confidence_score * 100) : null;
   const font = "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif";
@@ -1654,13 +1685,14 @@ function renderDashboard(s) {
   const d = (field) => s[field] || {};
   const polLabel = (f) => {
     const o = d(f);
-    return o.name ? `${formatNombre(o.name)}${o.grupo_parlamentario ? ` · ${o.grupo_parlamentario}` : ''}` : '-';
+    const g = normalizeGroup(o.grupo_parlamentario);
+    return o.name ? `${formatNombre(o.name)}${g ? ` · ${g}` : ''}` : '-';
   };
 
   const cb = s.combo_breaker || {};
   const bc = s.bocachancla || {};
-  const cbLabel = cb.politico ? `${formatNombre(cb.politico)} · ${cb.grupo_parlamentario ?? cb.partido ?? ''}` : '-';
-  const bcLabel = bc.politico ? `${formatNombre(bc.politico)} · ${bc.grupo_parlamentario ?? bc.partido ?? ''}` : '-';
+  const cbLabel = cb.politico ? `${formatNombre(cb.politico)} · ${normalizeGroup(cb.grupo_parlamentario) || cb.partido || ''}` : '-';
+  const bcLabel = bc.politico ? `${formatNombre(bc.politico)} · ${normalizeGroup(bc.grupo_parlamentario) || bc.partido || ''}` : '-';
   const cbSub = cb.fecha ? `${cb.count} confirmed in session on ${new Date(cb.fecha).toLocaleDateString('es-ES')}` : '-';
   const bcSub = bc.fecha ? `${bc.count} false/misleading in session on ${new Date(bc.fecha).toLocaleDateString('es-ES')}` : '-';
 
@@ -1925,10 +1957,11 @@ function renderSuggestions(matches, query) {
   list.innerHTML = matches.map((p, i) => {
     const formattedName = formatNombre(p.nombre_completo);
     const highlighted = highlightMatch(escHtml(formattedName), query);
-    const partido = p.grupo_parlamentario
-      ? `<span class="suggestion-partido">· ${escHtml(p.grupo_parlamentario)}</span>`
+    const g = normalizeGroup(p.grupo_parlamentario);
+    const partido = g
+      ? `<span class="suggestion-partido">· ${escHtml(g)}</span>`
       : '';
-    const gobierno = p.grupo_parlamentario === 'EU Commission' ? '  🏛️' : '';
+    const gobierno = g === 'EU Commission' ? '  🏛️' : '';
     return `<li class="suggestion-item" role="option" id="suggestion-${i}" aria-selected="false"
       data-id="${p.id}" data-name="${escHtml(formattedName)}">${highlighted}${partido}${gobierno}</li>`;
   }).join('');

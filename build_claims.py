@@ -154,6 +154,41 @@ def format_nombre(full_name):
     return str(full_name or "")
 
 
+# ── Parliamentary group normalization ─────────────────────────────────────────
+# grupo_parlamentario is stored inconsistently (abbreviations + full names).
+# Normalize every variant to its canonical abbreviation. Unknown placeholders
+# resolve to "" so the group suffix is omitted. (Mirrors normalizeGroup in app.js.)
+GROUP_ALIASES = {
+    "ppe": "PPE",
+    "epp": "PPE",
+    "epp group": "PPE",
+    "group of the european people's party (christian democrats)": "PPE",
+    "s&d": "S&D",
+    "s&d group": "S&D",
+    "renew": "Renew",
+    "renew europe": "Renew",
+    "renew europe group": "Renew",
+    "verts/ale": "Verts/ALE",
+    "ecr": "ECR",
+    "pfe": "PfE",
+    "the left": "The Left",
+    "esn": "ESN",
+    "ni": "NI",
+    "cargo de gobierno": "EU Commission",  # local SQLite label for Commission members
+}
+GROUP_UNKNOWN = {"no determinado", "not determined", "desconocido", "n/a"}
+
+
+def normalize_group(grupo):
+    raw = str(grupo or "").strip()
+    if raw == "EU Commission":  # handled separately via the gobierno marker
+        return raw
+    key = raw.lower()
+    if key in GROUP_UNKNOWN:
+        return ""
+    return GROUP_ALIASES.get(key, raw)
+
+
 def resultado_to_class(resultado):
     if not resultado:
         return "nv"
@@ -356,7 +391,7 @@ def render_page(claim, slug, session_date):
     claim_id        = claim["id"]
 
     pol_nombre = format_nombre(pol.get("nombre_completo", ""))
-    pol_grupo  = pol.get("grupo_parlamentario", "")
+    pol_grupo  = normalize_group(pol.get("grupo_parlamentario", ""))
     is_eu_com  = pol_grupo == "EU Commission"
 
     texto_norm = capitalize(str(claim.get("texto_normalizado") or "").strip())
@@ -1147,11 +1182,12 @@ def _write_politician_page(pol_slug, info):
         )
     claims_html = "\n".join(rows)
 
+    group_label = normalize_group(group)
     subtitle_parts = []
     if party:
         subtitle_parts.append(esc(party))
-    if group and group != party:
-        subtitle_parts.append(esc(group))
+    if group_label and group_label != party:
+        subtitle_parts.append(esc(group_label))
     subtitle_html = (
         f'<p style="font-size:.82rem;color:var(--c-text-muted);margin:.25rem 0 2rem">'
         f'{"&nbsp;·&nbsp;".join(subtitle_parts)}</p>'
