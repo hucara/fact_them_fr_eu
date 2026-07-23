@@ -16,6 +16,7 @@ import os
 import re
 import sqlite3
 import sys
+import unicodedata
 import urllib.parse
 from datetime import date, datetime
 from pathlib import Path
@@ -1264,56 +1265,55 @@ def update_sitemap(slug_dates, politician_slugs):
     )
 
 
-# ── Archive page ──────────────────────────────────────────────────────────────
+# ── Archive page (paginated A–Z) ──────────────────────────────────────────────
 
 ARCHIVE_PATH = Path(__file__).parent / "archive.html"
 
+# A–Z buckets plus '#' for names that don't start with a Latin letter.
+ARCHIVE_BUCKETS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["#"]
 
-def generate_archive(claims_data):
-    """
-    Build a plain-HTML archive page listing every claim with a bare <a href>.
-    No JS required — pure link graph for crawlers.
-    Groups claims by MEP name alphabetically.
-    """
-    by_mep = {}
-    for slug, claim in claims_data:
-        pol = claim.get("politician") or {}
-        name = format_nombre(pol.get("nombre_completo", "")) or "Unknown MEP"
-        by_mep.setdefault(name, []).append((slug, claim))
 
-    rows = []
-    for name in sorted(by_mep):
-        sample_pol = (by_mep[name][0][1].get("politician") or {}) if by_mep[name] else {}
-        pol_slug = slugify_politician(
-            sample_pol.get("nombre_completo", name),
-            sample_pol.get("partido") or sample_pol.get("grupo_parlamentario") or "",
-        )
-        rows.append(f'  <h2><a href="{BASE_URL}/politician/{pol_slug}.html">{esc(name)}</a></h2>\n  <ul>')
-        for slug, claim in by_mep[name]:
-            text = esc(str(claim.get("texto_normalizado") or slug).strip()[:120])
-            url  = f"{BASE_URL}/claim/{slug}.html"
-            rows.append(f'    <li><a href="{url}">{text}</a></li>')
-        rows.append("  </ul>")
+def _archive_bucket_of(name):
+    """First-letter bucket for a display name: 'A'..'Z' or '#'."""
+    s = str(name or "").strip()
+    if not s:
+        return "#"
+    stripped = "".join(
+        c for c in unicodedata.normalize("NFD", s[0]) if unicodedata.category(c) != "Mn"
+    )
+    ch = (stripped[:1] or s[0]).upper()
+    return ch if "A" <= ch <= "Z" else "#"
 
-    body = "\n".join(rows)
-    page = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>All claims archive — Facthem EU</title>
-  <meta name="robots" content="noindex, follow" />
-  <link rel="canonical" href="{BASE_URL}/archive.html" />
-  <link rel="stylesheet" href="css/style.css" />
-  <style>
-    .archive-page {{
+
+def _archive_bucket_file(letter):
+    return "archive-num.html" if letter == "#" else f"archive-{letter.lower()}.html"
+
+
+def _archive_nav(file_for, current):
+    """A–Z index bar. Active letters link to their page; the rest are dimmed."""
+    items = []
+    for letter in ARCHIVE_BUCKETS:
+        if letter in file_for:
+            cls = "archive-letter" + (" archive-letter--current" if letter == current else "")
+            items.append(f'<a class="{cls}" href="{BASE_URL}/{file_for[letter]}">{esc(letter)}</a>')
+        else:
+            items.append(f'<span class="archive-letter archive-letter--empty">{esc(letter)}</span>')
+    return (
+        '<nav class="archive-nav" aria-label="Alphabetical index">\n      '
+        + "".join(items)
+        + "\n    </nav>"
+    )
+
+
+ARCHIVE_STYLE_EU = """
+    .archive-page {
       flex: 1;
       max-width: 900px;
       margin: 0 auto;
       width: 100%;
       padding: 3rem 1.75rem 5rem;
-    }}
-    .archive-page h1 {{
+    }
+    .archive-page h1 {
       font-size: 1.4rem;
       font-weight: 900;
       letter-spacing: -.03em;
@@ -1321,38 +1321,132 @@ def generate_archive(claims_data):
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 2rem;
-    }}
-    .archive-page h2 {{
+      margin-bottom: .5rem;
+    }
+    .archive-caption {
+      font-size: .82rem;
+      color: var(--c-text-muted);
+      margin: 0 0 1.5rem;
+    }
+    .archive-page h2 {
       font-size: .78rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .12em;
       color: var(--c-text-muted);
       margin: 2rem 0 .5rem;
-    }}
-    .archive-page ul {{
+    }
+    .archive-page ul {
       margin: 0 0 .5rem;
       padding-left: 1.2rem;
-    }}
-    .archive-page li {{
+    }
+    .archive-page li {
       margin: .3rem 0;
       font-size: .88rem;
       line-height: 1.5;
-    }}
-    .archive-page a {{
+    }
+    .archive-page a {
       color: var(--c-accent);
       text-decoration: none;
       border-bottom: 1px solid rgba(160,120,0,.3);
-    }}
-    .archive-page a:hover {{ border-color: var(--c-accent); }}
-    .archive-back {{
-      font-size: .85rem;
+    }
+    .archive-page a:hover { border-color: var(--c-accent); }
+    .archive-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .3rem;
+      margin: 0 0 2rem;
+    }
+    .archive-nav + h2 { margin-top: 0; }
+    .archive-page .archive-letter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2rem;
+      height: 2rem;
+      padding: 0 .35rem;
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-xs);
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--c-accent);
+      text-decoration: none;
+    }
+    .archive-page .archive-letter:hover {
+      border-color: var(--c-accent);
+      background: rgba(255,255,255,.05);
+    }
+    .archive-page .archive-letter--current {
+      background: rgba(255,255,255,.12);
+      border-color: var(--c-accent);
+      color: var(--c-text);
+    }
+    .archive-page .archive-letter--empty {
       color: var(--c-text-muted);
-      margin-bottom: 2rem;
-      display: block;
-    }}
-  </style>
+      opacity: .3;
+      border-color: transparent;
+    }
+"""
+
+
+def generate_archive(claims_data):
+    """
+    Plain-HTML archive paginated A–Z by MEP initial.
+    No JS required — pure link graph for crawlers.
+    archive.html = first active letter; archive-<x>.html = the rest.
+    """
+    by_mep = {}
+    for slug, claim in claims_data:
+        pol = claim.get("politician") or {}
+        name = format_nombre(pol.get("nombre_completo", "")) or "Unknown MEP"
+        by_mep.setdefault(name, []).append((slug, claim))
+
+    buckets = {}
+    for name in by_mep:
+        buckets.setdefault(_archive_bucket_of(name), []).append(name)
+
+    active_ordered = [L for L in ARCHIVE_BUCKETS if L in buckets]
+    file_for = {
+        L: ("archive.html" if i == 0 else _archive_bucket_file(L))
+        for i, L in enumerate(active_ordered)
+    }
+
+    # Clean stale per-letter pages from previous builds.
+    for f in Path(__file__).parent.glob("archive-*.html"):
+        f.unlink()
+
+    def _letter_body(letter):
+        rows = []
+        for name in sorted(buckets[letter], key=str.casefold):
+            sample_pol = (by_mep[name][0][1].get("politician") or {}) if by_mep[name] else {}
+            pol_slug = slugify_politician(
+                sample_pol.get("nombre_completo", name),
+                sample_pol.get("partido") or sample_pol.get("grupo_parlamentario") or "",
+            )
+            rows.append(f'  <h2><a href="{BASE_URL}/politician/{pol_slug}.html">{esc(name)}</a></h2>\n  <ul>')
+            for slug, claim in by_mep[name]:
+                text = esc(str(claim.get("texto_normalizado") or slug).strip()[:120])
+                url  = f"{BASE_URL}/claim/{slug}.html"
+                rows.append(f'    <li><a href="{url}">{text}</a></li>')
+            rows.append("  </ul>")
+        return "\n".join(rows)
+
+    def _page(letter):
+        nav   = _archive_nav(file_for, letter)
+        body  = _letter_body(letter)
+        canon = f"{BASE_URL}/{file_for[letter]}"
+        n_mep = len(buckets[letter])
+        mep_word = "MEP" if n_mep == 1 else "MEPs"
+        return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All claims — {esc(letter)} | Facthem EU</title>
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="{esc(canon)}" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>{ARCHIVE_STYLE_EU}  </style>
 </head>
 <body>
   <header class="site-header">
@@ -1362,13 +1456,34 @@ def generate_archive(claims_data):
   </header>
   <div class="archive-page">
     <h1>All claims</h1>
+    <p class="archive-caption">MEPs whose initial is “{esc(letter)}” · {n_mep} {mep_word}</p>
+    {nav}
 {body}
+    {nav}
   </div>
 </body>
 </html>
 """
-    ARCHIVE_PATH.write_text(page, encoding="utf-8")
-    print(f"  archive.html written — {sum(len(v) for v in by_mep.values())} claims, {len(by_mep)} MEPs")
+
+    if not active_ordered:
+        ARCHIVE_PATH.write_text(
+            '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+            '<title>All claims archive — Facthem EU</title>'
+            '<meta name="robots" content="noindex, follow"></head>'
+            "<body><p>No claims.</p></body></html>",
+            encoding="utf-8",
+        )
+        print("  archive.html written — 0 claims")
+        return
+
+    for letter in active_ordered:
+        (Path(__file__).parent / file_for[letter]).write_text(_page(letter), encoding="utf-8")
+
+    total_claims = sum(len(v) for v in by_mep.values())
+    print(
+        f"  archive paginated — {len(active_ordered)} letters, "
+        f"{total_claims} claims, {len(by_mep)} MEPs"
+    )
 
 
 # ── Politician pages ──────────────────────────────────────────────────────────
