@@ -17,7 +17,7 @@ import re
 import sqlite3
 import sys
 import urllib.parse
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 # ── Local-mode detection ──────────────────────────────────────────────────────
@@ -152,6 +152,50 @@ def format_nombre(full_name):
     if len(parts) == 2:
         return f"{parts[1].strip()} {parts[0].strip()}"
     return str(full_name or "")
+
+
+# ── Date formatting ───────────────────────────────────────────────────────────
+
+MONTHS_EN_ABBR = [
+    "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+]
+
+MONTHS_EN = [
+    "", "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+]
+
+
+def _date_short_en(raw):
+    """'2026-06-17' → '17 Jun 2026' ('' if no valid date)."""
+    if not raw:
+        return ""
+    try:
+        dt = datetime.fromisoformat(str(raw)[:10])
+        return f"{dt.day} {MONTHS_EN_ABBR[dt.month]} {dt.year}"
+    except ValueError:
+        return ""
+
+
+def _format_session_date_en(raw):
+    """'2026-06-17' → '17 June 2026' ('Unknown session' if invalid)."""
+    if not raw:
+        return "Unknown session"
+    try:
+        dt = datetime.fromisoformat(str(raw)[:10])
+        return f"{dt.day} {MONTHS_EN[dt.month]} {dt.year}"
+    except ValueError:
+        return str(raw)
+
+
+def _truncate_words(text, limit):
+    """Trim at a word boundary and add an ellipsis."""
+    text = str(text or "").strip()
+    if len(text) <= limit:
+        return text
+    cut = text[:limit].rsplit(" ", 1)[0].rstrip(" ,.;:")
+    return f"{cut}…"
 
 
 # ── Parliamentary group normalization ─────────────────────────────────────────
@@ -323,7 +367,7 @@ def render_fuentes(raw):
 
 # ── ClaimReview schema.org ────────────────────────────────────────────────────
 
-def build_claim_review_schema(claim, slug, pol_name, session_date):
+def build_claim_review_schema(claim, slug, pol_name, session_date, pol_page_url=None):
     v = claim.get("verification") or []
     v = v[0] if isinstance(v, list) and v else (v if isinstance(v, dict) else {})
     resultado_key = (v.get("resultado") or "").upper()
@@ -343,10 +387,13 @@ def build_claim_review_schema(claim, slug, pol_name, session_date):
         },
     }
     if pol_name:
-        item_reviewed["author"] = {
+        author = {
             "@type": "Person",
             "name": pol_name,
         }
+        if pol_page_url:
+            author["sameAs"] = [pol_page_url]
+        item_reviewed["author"] = author
 
     schema = {
         "@context": "https://schema.org",
@@ -379,7 +426,7 @@ def build_claim_review_schema(claim, slug, pol_name, session_date):
 
 # ── Page renderer ─────────────────────────────────────────────────────────────
 
-def render_page(claim, slug, session_date):
+def render_page(claim, slug, session_date, related_session=None, related_pol=None):
     v = claim.get("verification") or []
     v = v[0] if isinstance(v, list) and v else (v if isinstance(v, dict) else {})
     pol = claim.get("politician") or {}
@@ -394,6 +441,14 @@ def render_page(claim, slug, session_date):
     pol_grupo  = normalize_group(pol.get("grupo_parlamentario", ""))
     is_eu_com  = pol_grupo == "EU Commission"
 
+    # ── Politician page link (internal linking) ──
+    pol_slug = (
+        slugify_politician(pol.get("nombre_completo", ""),
+                           pol.get("partido") or pol.get("grupo_parlamentario") or "")
+        if pol_nombre else None
+    )
+    pol_page_url = f"{BASE_URL}/politician/{pol_slug}.html" if pol_slug else None
+
     texto_norm = capitalize(str(claim.get("texto_normalizado") or "").strip())
     texto_orig = str(claim.get("texto_original") or "").strip()
 
@@ -403,7 +458,8 @@ def render_page(claim, slug, session_date):
     desc_text = str(claim.get("texto_normalizado") or "").strip()
     desc      = (desc_text[:157] + "…") if len(desc_text) > 160 else desc_text
     canon_url = f"{BASE_URL}/claim/{slug}.html"
-    schema_ld = build_claim_review_schema(claim, slug, pol_nombre, session_date)
+    schema_ld = build_claim_review_schema(claim, slug, pol_nombre, session_date,
+                                          pol_page_url=pol_page_url)
 
     # ── Back URL ──
     session_id = claim.get("session_id", "")
@@ -431,24 +487,28 @@ def render_page(claim, slug, session_date):
 
     # ── Politician line ──
     if pol_nombre:
+        name_inner = (
+            f'<a href="{pol_page_url}" class="politician-link">{esc(pol_nombre)}</a>'
+            if pol_page_url else esc(pol_nombre)
+        )
         if is_eu_com:
             pol_html = (
                 f'<span class="politician-name" style="font-size:1.05rem">'
-                f'{esc(pol_nombre)}'
+                f'{name_inner}'
                 f'<span class="politician-gobierno" title="EU Commission">🏛️</span>'
                 f'</span>'
             )
         elif pol_grupo:
             pol_html = (
                 f'<span class="politician-name" style="font-size:1.05rem">'
-                f'{esc(pol_nombre)}'
+                f'{name_inner}'
                 f'<span class="politician-partido">· {esc(pol_grupo)}</span>'
                 f'</span>'
             )
         else:
             pol_html = (
                 f'<span class="politician-name" style="font-size:1.05rem">'
-                f'{esc(pol_nombre)}</span>'
+                f'{name_inner}</span>'
             )
     else:
         pol_html = '<span class="politician-name unknown">Unknown MEP</span>'
@@ -490,6 +550,67 @@ def render_page(claim, slug, session_date):
     detail_inner = "\n  ".join(p for p in detail_parts if p)
     details_html = f'<dl class="modal-detail-list">\n  {detail_inner}\n</dl>' if detail_inner else ""
 
+    # ── Session date (inline next to the MEP name) ──
+    sess_iso   = str(session_date or "")[:10]
+    sess_short = _date_short_en(sess_iso)
+    session_time_html = (
+        f'<time class="claim-session-date" datetime="{sess_iso}">{sess_short}</time>'
+        if sess_short else ""
+    )
+
+    # ── Breadcrumb (visible + BreadcrumbList JSON-LD) ──
+    crumbs = [{"@type": "ListItem", "position": 1, "name": "Home", "item": f"{BASE_URL}/"}]
+    crumb_parts = [f'<a href="{BASE_URL}/">Home</a>']
+    if pol_nombre and pol_page_url:
+        crumbs.append({"@type": "ListItem", "position": 2, "name": pol_nombre, "item": pol_page_url})
+        crumb_parts.append(f'<a class="crumb-pol" href="{pol_page_url}">{esc(pol_nombre)}</a>')
+    crumbs.append({
+        "@type": "ListItem",
+        "position": len(crumbs) + 1,
+        "name": f"“{_truncate_words(desc_text, 60)}”",
+    })
+    crumb_parts.append(f'<span class="current">“{esc(_truncate_words(texto_norm, 48))}”</span>')
+    breadcrumb_ld = json.dumps(
+        {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": crumbs},
+        ensure_ascii=False, indent=2,
+    )
+    sep = '\n      <span class="sep">›</span>\n      '
+    breadcrumb_html = (
+        '<nav class="cp-breadcrumb" aria-label="Breadcrumb">\n      '
+        + sep.join(crumb_parts)
+        + "\n    </nav>"
+    )
+
+    # ── Related-claim blocks (internal linking) ──
+    def _rel_block(header_html, items):
+        if not items:
+            return ""
+        lis = "".join(
+            f'<li><a class="rel-claim" href="{esc(it["url"])}">“{esc(it["text"])}”'
+            f'<span class="rel-meta">{esc(it["meta"])}</span></a></li>'
+            for it in items
+        )
+        return f"<h2>{header_html}</h2>\n    <ul>{lis}</ul>"
+
+    sess_full = _format_session_date_en(sess_iso) if sess_iso else ""
+    session_header = (
+        f'More from this session — <a href="{esc(back_url)}">{esc(sess_full)}</a>'
+        if claim.get("session_id") and sess_full else "More from this session"
+    )
+    pol_header = (
+        f'More from <a href="{pol_page_url}">{esc(pol_nombre)}</a>'
+        if pol_nombre and pol_page_url else "More from the same MEP"
+    )
+    rel_blocks = [
+        _rel_block(session_header, related_session or []),
+        _rel_block(pol_header, related_pol or []),
+    ]
+    rel_blocks = [b for b in rel_blocks if b]
+    related_html = (
+        '<aside class="cp-related">\n    ' + "\n\n    ".join(rel_blocks) + "\n  </aside>"
+        if rel_blocks else ""
+    )
+
     return f"""\
 <!DOCTYPE html>
 <html lang="en">
@@ -526,6 +647,11 @@ def render_page(claim, slug, session_date):
   <!-- ClaimReview structured data -->
   <script type="application/ld+json">
 {schema_ld}
+  </script>
+
+  <!-- BreadcrumbList structured data -->
+  <script type="application/ld+json">
+{breadcrumb_ld}
   </script>
 
   <!-- Fonts -->
@@ -670,6 +796,97 @@ def render_page(claim, slug, session_date):
       color: var(--c-text-muted);
       opacity: .35;
     }}
+
+    /* ── Breadcrumb: in the Back-button strip ── */
+    .cp-breadcrumb {{
+      position: absolute;
+      top: 1.35rem;
+      left: 1.75rem;
+      right: 6rem;
+      font-size: .72rem;
+      color: var(--c-text-muted);
+      display: flex;
+      gap: .35rem;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+    }}
+    .cp-breadcrumb a {{
+      color: var(--c-text-muted);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      flex-shrink: 0;
+    }}
+    .cp-breadcrumb a:hover {{ color: var(--c-accent); border-color: var(--c-accent); }}
+    .cp-breadcrumb a.crumb-pol {{
+      flex-shrink: 1;
+      min-width: 6ch;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }}
+    .cp-breadcrumb .sep {{ opacity: .5; flex-shrink: 0; }}
+    .cp-breadcrumb .current {{
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: .7;
+    }}
+    @media (max-width: 560px) {{
+      .cp-breadcrumb .current, .cp-breadcrumb .sep:last-of-type {{ display: none; }}
+    }}
+
+    /* ── Session date: discreet, inline with the name ── */
+    .claim-session-date {{
+      font-size: .78rem;
+      font-weight: 400;
+      color: var(--c-text-muted);
+      white-space: nowrap;
+    }}
+    .claim-session-date::before {{ content: "· "; opacity: .6; }}
+
+    /* ── Politician link ── */
+    .politician-link {{
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color .12s, color .12s;
+    }}
+    .politician-link:hover {{ color: var(--c-accent); border-color: var(--c-accent); }}
+
+    /* ── Related claims ── */
+    .cp-related {{
+      max-width: 640px;
+      width: 100%;
+    }}
+    .cp-related h2 {{
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--c-text-muted);
+      margin: 1.75rem 0 .75rem;
+    }}
+    .cp-related h2 a {{ color: inherit; text-decoration: none; border-bottom: 1px solid transparent; }}
+    .cp-related h2 a:hover {{ color: var(--c-accent); border-color: var(--c-accent); }}
+    .cp-related ul {{ list-style: none; margin: 0; padding: 0; }}
+    .cp-related li {{ border-bottom: 1px solid var(--c-border); }}
+    .cp-related li:last-child {{ border-bottom: none; }}
+    .cp-related a.rel-claim {{
+      display: block;
+      padding: .6rem .25rem;
+      font-size: .88rem;
+      line-height: 1.5;
+      color: var(--c-text);
+      text-decoration: none;
+      transition: color .12s;
+    }}
+    .cp-related a.rel-claim:hover {{ color: var(--c-accent); }}
+    .cp-related .rel-meta {{
+      display: block;
+      font-size: .7rem;
+      color: var(--c-text-muted);
+      margin-top: .15rem;
+    }}
   </style>
 </head>
 <body>
@@ -685,11 +902,13 @@ def render_page(claim, slug, session_date):
       Back
     </a>
 
+    {breadcrumb_html}
+
     <div id="modal-content">
 
       <header class="claim-header" style="margin-bottom:1.25rem">
         <div class="claim-meta-top">
-          {pol_html}
+          {pol_html}{session_time_html}
         </div>
         <span class="resultado-badge resultado-{resultado_class}">{esc(resultado_label)}</span>
       </header>
@@ -746,6 +965,8 @@ def render_page(claim, slug, session_date):
     </div>
   </div>
 
+  {related_html}
+
   <p class="cp-brand">
     <a href="{BASE_URL}/" style="color:inherit;text-decoration:none">facthem.eu</a>
     &nbsp;·&nbsp;
@@ -797,6 +1018,82 @@ def render_page(claim, slug, session_date):
 </body>
 </html>
 """
+
+
+# ── Related claims (internal linking) ─────────────────────────────────────────
+
+RELATED_PER_BLOCK = 4
+
+
+def _related_text(claim):
+    return _truncate_words(
+        capitalize(str(claim.get("texto_normalizado") or "").strip()), 90
+    )
+
+
+def build_related_indexes(claims_with_slugs, session_dates):
+    """{session_id: [(slug, claim)]}, {mep_name: [(slug, claim)]} — deterministic.
+
+    MEPs are keyed by nombre_completo (the EU claim rows carry no politician id),
+    matching how generate_politician_pages groups them.
+    """
+    by_session, by_pol = {}, {}
+    for slug, claim in claims_with_slugs:
+        sid  = claim.get("session_id")
+        name = (claim.get("politician") or {}).get("nombre_completo")
+        if sid:
+            by_session.setdefault(sid, []).append((slug, claim))
+        if name:
+            by_pol.setdefault(name, []).append((slug, claim))
+    # same session: stable order by slug
+    for lst in by_session.values():
+        lst.sort(key=lambda t: t[0])
+    # same MEP: most recent session first, tie-break by slug
+    for lst in by_pol.values():
+        lst.sort(
+            key=lambda t: (session_dates.get(t[1].get("session_id"), "") or "", t[0]),
+            reverse=True,
+        )
+    return by_session, by_pol
+
+
+def build_related_blocks(claim, slug, by_session, by_pol, session_dates):
+    cid      = claim.get("id")
+    sess_id  = claim.get("session_id")
+    pol_name = (claim.get("politician") or {}).get("nombre_completo")
+
+    seen = {slug}
+    session_items = []
+    for sib_slug, sib in by_session.get(sess_id, []):
+        if sib_slug in seen or sib.get("id") == cid:
+            continue
+        sib_pol = sib.get("politician") or {}
+        who     = format_nombre(sib_pol.get("nombre_completo", "")) or "Unknown MEP"
+        group   = normalize_group(sib_pol.get("grupo_parlamentario", ""))
+        session_items.append({
+            "url":  f"{BASE_URL}/claim/{sib_slug}.html",
+            "text": _related_text(sib),
+            "meta": f"{who} · {group}" if group else who,
+        })
+        seen.add(sib_slug)
+        if len(session_items) >= RELATED_PER_BLOCK:
+            break
+
+    pol_items = []
+    for sib_slug, sib in by_pol.get(pol_name, []):
+        if sib_slug in seen or sib.get("id") == cid:
+            continue
+        d = _format_session_date_en(session_dates.get(sib.get("session_id"), ""))
+        pol_items.append({
+            "url":  f"{BASE_URL}/claim/{sib_slug}.html",
+            "text": _related_text(sib),
+            "meta": d,
+        })
+        seen.add(sib_slug)
+        if len(pol_items) >= RELATED_PER_BLOCK:
+            break
+
+    return session_items, pol_items
 
 
 # ── Supabase fetch ────────────────────────────────────────────────────────────
@@ -1283,16 +1580,30 @@ def main():
     for f in OUT_DIR.glob("*.html"):
         f.unlink()
 
+    # Slug per claim (computed once) + related-claim indexes.
+    claims_with_slugs = []
+    for claim in claims:
+        try:
+            slug = slugify(str(claim.get("texto_normalizado") or ""), claim["id"])
+            claims_with_slugs.append((slug, claim))
+        except Exception:
+            pass
+    by_session, by_pol = build_related_indexes(claims_with_slugs, session_dates)
+
     generated, errors = {}, []
 
     print("Generating pages…")
-    for claim in claims:
+    for slug, claim in claims_with_slugs:
         try:
-            slug         = slugify(str(claim.get("texto_normalizado") or ""), claim["id"])
             session_date = session_dates.get(claim.get("session_id"), "")
+            rel_session, rel_pol = build_related_blocks(
+                claim, slug, by_session, by_pol, session_dates
+            )
             OUT_DIR.mkdir(exist_ok=True)
             (OUT_DIR / f"{slug}.html").write_text(
-                render_page(claim, slug, session_date), encoding="utf-8"
+                render_page(claim, slug, session_date,
+                            related_session=rel_session, related_pol=rel_pol),
+                encoding="utf-8",
             )
             generated[slug] = session_date or TODAY
         except Exception as exc:
@@ -1303,14 +1614,6 @@ def main():
         print(f"  {len(errors)} error(s):")
         for cid, err in errors[:20]:
             print(f"    claim {cid}: {err}")
-
-    claims_with_slugs = []
-    for claim in claims:
-        try:
-            slug = slugify(str(claim.get("texto_normalizado") or ""), claim["id"])
-            claims_with_slugs.append((slug, claim))
-        except Exception:
-            pass
 
     print("Generating politician pages…")
     politician_slugs = generate_politician_pages(claims_with_slugs)
