@@ -1099,12 +1099,12 @@ def build_related_blocks(claim, slug, by_session, by_pol, session_dates):
 
 # ── Supabase fetch ────────────────────────────────────────────────────────────
 
-SELECT_FIELDS = """
-  id, session_id, texto_normalizado, texto_original,
-  ambito_geografico, ambito_tematico,
-  politician:politician_id (nombre_completo, partido, grupo_parlamentario),
-  verification (resultado, confidence_score, omisiones, errores, fuentes)
-"""
+CLAIM_FIELDS = (
+    "id, session_id, politician_id, texto_normalizado, texto_original, "
+    "ambito_geografico, ambito_tematico"
+)
+POLITICIAN_FIELDS = "id, nombre_completo, partido, grupo_parlamentario"
+VERIFICATION_FIELDS = "id, claim_id, resultado, confidence_score, omisiones, errores, fuentes"
 
 
 def _sqlite_conn():
@@ -1160,28 +1160,69 @@ def fetch_session_dates_sqlite():
     return {r["id"]: (r["fecha"] or "")[:10] for r in rows}
 
 
-def fetch_all_claims(supabase):
-    """Paginate through all claims (Supabase default page = 1 000 rows)."""
-    all_claims, page_size, offset = [], 1000, 0
+def _paginate(supabase, table, fields, key, label, page_size=1000):
+    """Keyset-paginate a table by `key` with no joins."""
+    rows, last = [], None
     while True:
-        resp = (
-            supabase.from_("claim")
-            .select(SELECT_FIELDS)
-            .range(offset, offset + page_size - 1)
-            .execute()
+        query = (
+            supabase.from_(table)
+            .select(fields)
+            .order(key)
+            .limit(page_size)
         )
-        batch = resp.data or []
-        all_claims.extend(batch)
+        if last is not None:
+            query = query.gt(key, last)
+        batch = (query.execute().data) or []
+        rows.extend(batch)
+        if not batch:
+            break
+        last = batch[-1].get(key)
+        print(f"  {len(rows)} {label} read…")
         if len(batch) < page_size:
             break
-        offset += page_size
-    return all_claims
+    return rows
+
+
+def fetch_all_claims(supabase):
+    """Fetch claims, politicians, verifications separately and join in memory.
+
+    Why: embedding politician/verification in a single PostgREST select
+    triggers statement-timeout (57014) on Supabase for the full claim table.
+    """
+    total = supabase.from_("claim").select("id", count="exact", head=True).execute().count
+    print(f"  DB reports {total} claims in the claim table")
+
+    politicians = {
+        p["id"]: {k: p.get(k) for k in ("nombre_completo", "partido", "grupo_parlamentario")}
+        for p in _paginate(supabase, "politician", POLITICIAN_FIELDS, "id", "politicians")
+    }
+    verifications = {}
+    for v in _paginate(supabase, "verification", VERIFICATION_FIELDS, "id", "verifications"):
+        verifications.setdefault(v["claim_id"], []).append({
+            k: v.get(k) for k in ("resultado", "confidence_score", "omisiones", "errores", "fuentes")
+        })
+
+    raw_claims = _paginate(supabase, "claim", CLAIM_FIELDS, "id", "claims", page_size=500)
+
+    claims = []
+    for c in raw_claims:
+        claims.append({
+            "id": c["id"],
+            "session_id": c.get("session_id"),
+            "texto_normalizado": c.get("texto_normalizado"),
+            "texto_original": c.get("texto_original"),
+            "ambito_geografico": c.get("ambito_geografico"),
+            "ambito_tematico": c.get("ambito_tematico"),
+            "politician": politicians.get(c.get("politician_id")),
+            "verification": verifications.get(c["id"], []),
+        })
+    return claims
 
 
 def fetch_session_dates(supabase):
     """Returns {session_id: fecha_iso_string}."""
-    resp = supabase.from_("session").select("id, fecha").execute()
-    return {s["id"]: (s["fecha"] or "")[:10] for s in (resp.data or [])}
+    rows = _paginate(supabase, "session", "id, fecha", "id", "sessions")
+    return {s["id"]: (s["fecha"] or "")[:10] for s in rows}
 
 
 # ── Sitemap ───────────────────────────────────────────────────────────────────
