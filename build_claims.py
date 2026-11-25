@@ -1219,6 +1219,47 @@ def fetch_all_claims(supabase):
     return claims
 
 
+# ── Download cache ────────────────────────────────────────────────────────────
+# The backend sync writes a hash of everything it published to sync_state. While
+# that hash is unchanged, a code-only deploy reuses the last download instead of
+# paging through every table again (the pages are still all rendered).
+# FORCE_FETCH=1 (manual / sync-triggered runs) always downloads.
+
+DATA_CACHE_DIR = Path(__file__).parent / ".data-cache"
+DATA_VERSION = os.environ.get("DATA_VERSION", "").strip()  # set by the workflow
+FORCE_FETCH = os.environ.get("FORCE_FETCH", "") == "1"
+
+
+def fetch_data_version(supabase):
+    """sync_state.data_hash, or None (table missing → always download)."""
+    try:
+        rows = supabase.from_("sync_state").select("data_hash").eq("id", 1).execute().data or []
+    except Exception as exc:
+        print(f"  warning: could not read sync_state ({exc}); full download")
+        return None
+    return rows[0]["data_hash"] if rows else None
+
+
+def load_cached_data(version):
+    path = DATA_CACHE_DIR / f"{version}.json"
+    if not version or FORCE_FETCH or not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        print(f"  warning: unreadable cache ({exc}); full download")
+        return None
+
+
+def save_cached_data(version, payload):
+    if not version:
+        return
+    DATA_CACHE_DIR.mkdir(exist_ok=True)
+    for old in DATA_CACHE_DIR.glob("*.json"):
+        old.unlink()
+    (DATA_CACHE_DIR / f"{version}.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+
 def fetch_session_dates(supabase):
     """Returns {session_id: fecha_iso_string}."""
     rows = _paginate(supabase, "session", "id, fecha", "id", "sessions")
@@ -1726,11 +1767,18 @@ def main():
             sys.exit("SUPABASE_URL and SUPABASE_ANON must be set in the environment")
         print("Connecting to Supabase…")
         supabase = create_client(SUPABASE_URL, SUPABASE_ANON)
-        print("Fetching claims…")
-        claims = fetch_all_claims(supabase)
-        print(f"  {len(claims)} claims fetched")
-        print("Fetching session dates…")
-        session_dates = fetch_session_dates(supabase)
+        version = DATA_VERSION or fetch_data_version(supabase)
+        cached = load_cached_data(version)
+        if cached:
+            print(f"Data unchanged since the last download ({version[:12]}): using the cache")
+            claims, session_dates = cached["claims"], cached["session_dates"]
+        else:
+            print("Fetching claims…")
+            claims = fetch_all_claims(supabase)
+            print(f"  {len(claims)} claims fetched")
+            print("Fetching session dates…")
+            session_dates = fetch_session_dates(supabase)
+            save_cached_data(version, {"claims": claims, "session_dates": session_dates})
 
     OUT_DIR.mkdir(exist_ok=True)
     for f in OUT_DIR.glob("*.html"):
