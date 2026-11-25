@@ -482,7 +482,7 @@ def render_page(claim, slug, session_date, related_session=None, related_pol=Non
     enc_text    = urllib.parse.quote(share_text)
     enc_wa      = urllib.parse.quote(f"{share_text}\n{canon_url}")
     url_twitter = f"https://twitter.com/intent/tweet?text={enc_text}&url={enc_url}&via=facthem_eu"
-    url_wa      = f"https://wa.me/?text={enc_wa}"
+    url_wa      = f"https://api.whatsapp.com/send?text={enc_wa}"
     url_fb      = f"https://www.facebook.com/sharer/sharer.php?u={enc_url}"
     url_tg      = f"https://t.me/share/url?url={enc_url}&text={enc_text}"
 
